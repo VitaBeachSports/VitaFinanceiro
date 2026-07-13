@@ -3580,15 +3580,6 @@ async function iniciarSetup2FA() {
   setupArea.innerHTML='<div style="color:var(--text-muted);font-size:13px;">Preparando...</div>';
   setupArea.style.display='';
   try {
-    // Delete any existing unverified factors first
-    const existingFactors = await sbListarFactors(AUTH.session);
-    const unverified = existingFactors.filter(f=>f.status==='unverified');
-    for(const f of unverified) {
-      await fetch(`${SB_URL}/auth/v1/factors/${f.id}`, {
-        method:'DELETE',
-        headers:{'apikey':SB_KEY,'Authorization':`Bearer ${AUTH.session}`}
-      });
-    }
     setupArea.innerHTML='<div style="color:var(--text-muted);font-size:13px;">Gerando QR Code...</div>';
     const data = await sbEnroll2FA(AUTH.session);
     _factorId = data.id;
@@ -4812,7 +4803,7 @@ async function sbEnroll2FA(token) {
     },
     body: JSON.stringify({
       factor_type: 'totp',
-      friendly_name: 'Vita Financeiro',
+      friendly_name: 'VitaFinanceiro_' + Date.now(),
       issuer: 'Vita Group'
     })
   });
