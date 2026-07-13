@@ -1317,7 +1317,9 @@ async function fazerLogin() {
 
     // Check for 2FA factors
     const factors = await sbListarFactors(data.access_token);
+    console.log('2FA factors:', JSON.stringify(factors));
     const totpFactor = factors.find(f => f.factor_type === 'totp' && f.status === 'verified');
+    console.log('TOTP verified factor:', totpFactor?.id);
 
     if(totpFactor) {
       AUTH.mfaFactorId = totpFactor.id;
