@@ -1069,38 +1069,24 @@ async function sbObterPerfil(email, token) {
 }
 
 async function sbVerificar2FA(factorId, code, token) {
-  // Try MFA challenge endpoint
-  let challengeUrl = `${SB_URL}/auth/v1/factors/${factorId}/challenge`;
-  let c = await fetch(challengeUrl, {
+  // Step 1: Create challenge
+  const c = await fetch(`${SB_URL}/auth/v1/factors/${factorId}/challenge`, {
     method: 'POST',
     headers: {'apikey': SB_KEY, 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json'}
   });
-  // Fallback to mfa/challenge
-  if(!c.ok) {
-    c = await fetch(`${SB_URL}/auth/v1/mfa/challenge`, {
-      method: 'POST',
-      headers: {'apikey': SB_KEY, 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json'},
-      body: JSON.stringify({factor_id: factorId})
-    });
-  }
   const cData = await c.json();
-  if(!c.ok) throw new Error(cData.message || 'Erro ao criar challenge 2FA');
+  if(!c.ok) throw new Error(cData.message || cData.msg || 'Erro ao criar challenge');
+  console.log('Challenge created:', cData);
 
-  // Verify
-  let v = await fetch(`${SB_URL}/auth/v1/factors/${factorId}/verify`, {
+  // Step 2: Verify with challenge_id and code
+  const v = await fetch(`${SB_URL}/auth/v1/factors/${factorId}/verify`, {
     method: 'POST',
     headers: {'apikey': SB_KEY, 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json'},
     body: JSON.stringify({challenge_id: cData.id, code})
   });
-  if(!v.ok) {
-    v = await fetch(`${SB_URL}/auth/v1/mfa/verify`, {
-      method: 'POST',
-      headers: {'apikey': SB_KEY, 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json'},
-      body: JSON.stringify({factor_id: factorId, challenge_id: cData.id, code})
-    });
-  }
   const vData = await v.json();
-  if(!v.ok) throw new Error(vData.message || 'Código inválido');
+  console.log('Verify response:', vData);
+  if(!v.ok) throw new Error(vData.message || vData.msg || 'Código inválido');
   return vData;
 }
 
@@ -3608,7 +3594,7 @@ async function confirmarSetup2FA() {
   try {
     await sbVerificar2FA(_factorId, code, AUTH.session);
     toast('2FA ativado com sucesso! ✓','success');
-    renderSegurancaPage();
+    await renderSegurancaPage();
   } catch(e) {
     toast('Código inválido. Tente novamente.','error');
   }
