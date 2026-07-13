@@ -1244,23 +1244,18 @@ async function syncToSupabase() {
 }
 
 async function sbSalvarSnapshot(dados) {
-  const id = Math.random().toString(36).slice(2,10);
-  const token = AUTH.session || SB_KEY;
+  const id = Math.random().toString(36).slice(2,10); // short ID
   const res = await fetch(`${SB_URL}/rest/v1/${SB_TABLE}`, {
     method: 'POST',
     headers: {
       'apikey': SB_KEY,
-      'Authorization': `Bearer ${token}`,
+      'Authorization': `Bearer ${SB_KEY}`,
       'Content-Type': 'application/json',
       'Prefer': 'return=representation'
     },
     body: JSON.stringify({ id, dados: JSON.stringify(dados) })
   });
-  if (!res.ok) {
-    const errTxt = await res.text();
-    console.error('Snapshot save error:', errTxt);
-    throw new Error(errTxt);
-  }
+  if (!res.ok) throw new Error(await res.text());
   return id;
 }
 
@@ -1525,9 +1520,8 @@ async function init() {
 
   if (viewId) {
     IS_VIEW_MODE = true;
-    let payload = null;
     try {
-      payload = await sbCarregarSnapshot(viewId);
+      const payload = await sbCarregarSnapshot(viewId);
       // Check expiry
       if(payload.expiraEm && new Date(payload.expiraEm) < new Date()) {
         document.getElementById('auth-screen').innerHTML = '<div class="auth-box" style="text-align:center;"><div class="auth-logo"><div class="name">Vita Group</div></div><p style="color:var(--red);margin-top:16px;">⚠ Este link expirou.<br>Solicite um novo link ao responsável.</p></div>';
@@ -1541,7 +1535,6 @@ async function init() {
     } catch(e){ toast('Erro ao carregar dados: '+e.message,'error'); }
     applyViewMode(payload?.shareTipo||'operacional');
     AUTH.userId='view';
-    renderAll();
     document.getElementById('auth-screen').style.display='none';
     document.getElementById('app').style.display='flex';
   } else if (hash && hash.startsWith('#data=')) {
@@ -2436,7 +2429,7 @@ async function gerarLink(){
     btnGerar.disabled = false;
   }
 }
-function copiarLink(){ navigator.clipboard.writeText(_generatedLink).then(()=>toast('Link copiado!','success')).catch(()=>{ prompt('Copie o link:', _generatedLink); }); }
+function copiarLink(){ navigator.clipboard.writeText(_generatedLink).then(()=>alert('Link copiado!')); }
 function abrirWhatsApp(){ window.open('https://wa.me/?text='+encodeURIComponent('📊 *Vita Group — Fluxo de Caixa*\nAcesse o panorama atualizado:\n'+_generatedLink),'_blank'); }
 
 // ════════════════════════════════════════
@@ -3364,114 +3357,6 @@ const REGRAS_DESPESA = [
 ];
 
 
-
-// ── Mapa de migração de IDs antigos → novos ──────────────
-const CAT_ID_MIGRATION = {
-  // Receitas antigas → novas
-  'letz_centro_mens':   'letz_alunos_vita',
-  'letz_centro_avuls':  'letz_avulsas',
-  'letz_centro_teste':  'letz_teste',
-  'letz_centro_day':    'letz_dayuse',
-  'letz_centro_loc_av': 'letz_loc_avulsas',
-  'letz_centro_loc_mn': 'letz_loc_mensais',
-  'letz_grac_mens':     'letz_alunos_grac',
-  'letz_grac_avuls':    'letz_avulsas',
-  'letz_grac_teste':    'letz_teste',
-  'torneios':           'letz_torneios',
-  'patrocinios':        'patrocinios',
-  'venda_bar':          'venda_bar',
-  'venda_loja':         'venda_loja',
-  'rec_funcional':      'rec_funcional',
-  'rec_formacao':       'rec_formacao',
-  'metodo_vita':        'metodo_vita',
-  'cursos':             'cursos_cap',
-  'cursos_cap':         'cursos_cap',
-  'outras_rec':         'outras_rec',
-  'outras_rec_acrescimos': 'outras_rec_acrescimos',
-  // Despesas antigas → novas
-  'com_prof_centro':    'com_prof_vita',
-  'com_prof_grac':      'com_prof_grac',
-  'com_prof_vita':      'com_prof_vita',
-  'com_funcional':      'com_funcional',
-  'loc_grac':           'loc_grac',
-  'desp_torneios':      'desp_torneios',
-  'agua':               'agua',
-  'aluguel':            'aluguel',
-  'energia':            'energia',
-  'internet':           'internet',
-  'manutencao':         'manut_predial',
-  'manut_predial':      'manut_predial',
-  'manut_quadras':      'manut_quadras',
-  'manut_bar':          'manut_bar',
-  'manut_equip':        'manut_equip',
-  'manut_estac':        'manut_estac',
-  'manut_loja':         'manut_loja',
-  'manut_sanit':        'manut_sanit',
-  'manut_telhado':      'manut_telhado',
-  'limpeza':            'limpeza',
-  'escritorio':         'escritorio',
-  'contabil':           'contabil',
-  'juridico':           'juridico',
-  'softwares':          'softwares',
-  'locac_maq':          'locac_maq',
-  'seguro':             'seguro',
-  'treinamentos':       'treinamentos',
-  'consultoria':        'consultoria',
-  'ambulancia':         'ambulancia',
-  'salarios':           'salarios',
-  'prolabore':          'prolabore',
-  'prolabore_gabriel':  'prolabore_gabriel',
-  'prolabore_marcela':  'prolabore_marcela',
-  'prolabore_rafaela':  'prolabore_rafaela',
-  'encargos':           'encargos',
-  'rescisoes':          'rescisoes',
-  'ferias':             'ferias',
-  'decimo_terceiro':    'decimo_terceiro',
-  'plano_saude':        'plano_saude',
-  'plano_odonto':       'plano_odonto',
-  'vale_alim':          'vale_alim',
-  'vale_transp':        'vale_transp',
-  'uniformes':          'uniformes',
-  'bonus':              'bonus',
-  'exames':             'exames',
-  'marketing':          'mkt_ads',
-  'mkt_ads':            'mkt_ads',
-  'mkt_agencias':       'mkt_agencias',
-  'uber':               'uber',
-  'combustivel':        'combustivel',
-  'alimentacao':        'alimentacao',
-  'brindes':            'brindes',
-  'fretes':             'fretes',
-  'taxas_pagas':        'taxas_pagas',
-  'taxas_lp_vita':      'taxas_lp_vita',
-  'taxas_lp_grac':      'taxas_lp_grac',
-  'impostos':           'impostos_acad',
-  'impostos_acad':      'impostos_acad',
-  'impostos_bar':       'impostos_bar',
-  'impostos_func':      'impostos_func',
-  'impostos_loja':      'impostos_loja',
-  'estornos_desp':      'estornos_desp',
-  'estornos_mens':      'estornos_mens',
-  'estornos_torn':      'estornos_torn',
-  'investimentos':      'inv_equip',
-  'inv_banheiros':      'inv_banheiros',
-  'inv_bar':            'inv_bar',
-  'inv_bolinhas':       'inv_bolinhas',
-  'inv_cobertura':      'inv_cobertura',
-  'inv_equip':          'inv_equip',
-  'inv_funcional':      'inv_funcional',
-  'inv_moveis':         'inv_moveis',
-  'inv_quadras':        'inv_quadras',
-  'desp_formacao':      'com_formacao',
-  'desp_metodo':        'desp_metodo',
-  'outras_desp':        'outras_desp',
-  'Realizados':         'outras_desp',
-};
-
-function migrarCatId(id) {
-  return CAT_ID_MIGRATION[id] || id;
-}
-
 function detectarSubcat(texto, empresa) {
   if(empresa !== 'Comércio') return null;
   const t = (texto||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
@@ -3547,19 +3432,9 @@ async function renderSegurancaPage() {
 
 async function iniciarSetup2FA() {
   const setupArea = document.getElementById('mfa-setup-area');
-  setupArea.innerHTML='<div style="color:var(--text-muted);font-size:13px;">Preparando...</div>';
+  setupArea.innerHTML='<div style="color:var(--text-muted);font-size:13px;">Gerando QR Code...</div>';
   setupArea.style.display='';
   try {
-    // Delete any existing unverified factors first
-    const existingFactors = await sbListarFactors(AUTH.session);
-    const unverified = existingFactors.filter(f=>f.status==='unverified');
-    for(const f of unverified) {
-      await fetch(`${SB_URL}/auth/v1/factors/${f.id}`, {
-        method:'DELETE',
-        headers:{'apikey':SB_KEY,'Authorization':`Bearer ${AUTH.session}`}
-      });
-    }
-    setupArea.innerHTML='<div style="color:var(--text-muted);font-size:13px;">Gerando QR Code...</div>';
     const data = await sbEnroll2FA(AUTH.session);
     _factorId = data.id;
     _qrUrl = data.totp?.qr_code;
@@ -4244,8 +4119,7 @@ function renderAnalises() {
   function somarPorCat(lista, tipo) {
     const map = {};
     lista.forEach(item=>{
-      const rawCat = item.categoria || (tipo==='receita'?'outras_rec':'outras_desp');
-      const cat = migrarCatId(rawCat);
+      const cat = item.categoria || (tipo==='receita'?'outras_rec':'outras_desp');
       map[cat] = (map[cat]||0) + parseFloat(item.valor||0);
     });
     return map;
@@ -4461,8 +4335,7 @@ function renderAnalises() {
     // Pizza por grupo de despesa
     const despGrupos={};
     lp.forEach(p=>{
-      const catId=migrarCatId(p.categoria||'outras_desp');
-      const cat=CATS_DESPESA.find(c=>c.id===catId);
+      const cat=CATS_DESPESA.find(c=>c.id===(p.categoria||'outras_desp'));
       const g=cat?cat.grupo:'Outras Despesas';
       despGrupos[g]=(despGrupos[g]||0)+parseFloat(p.valor||0);
     });
