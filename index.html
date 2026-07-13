@@ -1091,12 +1091,22 @@ async function sbVerificar2FA(factorId, code, token) {
 }
 
 async function sbListarFactors(token) {
-  const res = await fetch(`${SB_URL}/auth/v1/factors`, {
+  if(!token) { console.warn('[2FA DEBUG] sbListarFactors: no token'); return []; }
+  const res = await fetch(`${SB_URL}/auth/v1/user`, {
     headers: {'apikey': SB_KEY, 'Authorization': `Bearer ${token}`}
   });
+  const rawText = await res.text();
+  console.log('[2FA DEBUG] GET /auth/v1/user status:', res.status);
+  console.log('[2FA DEBUG] GET /auth/v1/user raw body:', rawText);
   if(!res.ok) return [];
-  const data = await res.json();
-  return data.totp || [];
+  let data;
+  try { data = JSON.parse(rawText); } catch(e) { console.error('[2FA DEBUG] parse failed', e); return []; }
+  const candidates = [data.factors, data.user?.factors, data.data?.factors, data.data?.user?.factors];
+  for(const c of candidates) {
+    if(Array.isArray(c)) { console.log('[2FA DEBUG] factors found:', JSON.stringify(c)); return c; }
+  }
+  console.warn('[2FA DEBUG] no factors array found. top-level keys:', Object.keys(data));
+  return [];
 }
 
 async function sbLogout(token) {
@@ -1316,10 +1326,10 @@ async function fazerLogin() {
     AUTH.email = email;
 
     // Check for 2FA factors
+    console.log('[2FA DEBUG] checking factors post-login...');
     const factors = await sbListarFactors(data.access_token);
-    console.log('2FA factors:', JSON.stringify(factors));
     const totpFactor = factors.find(f => f.factor_type === 'totp' && f.status === 'verified');
-    console.log('TOTP verified factor:', totpFactor?.id);
+    console.log('[2FA DEBUG] verified TOTP factor:', totpFactor ? totpFactor.id : 'NONE FOUND');
 
     if(totpFactor) {
       AUTH.mfaFactorId = totpFactor.id;
@@ -1344,7 +1354,9 @@ async function verificar2FA() {
   errEl.style.display='none';
   if(code.length !== 6) return;
   try {
-    await sbVerificar2FA(AUTH.mfaFactorId, code, AUTH.session);
+    const vData = await sbVerificar2FA(AUTH.mfaFactorId, code, AUTH.session);
+    console.log('[2FA DEBUG] login verify result:', JSON.stringify(vData));
+    if(vData.access_token) AUTH.session = vData.access_token; // use new aal2 session
     await finalizarLogin(AUTH.session, AUTH.email);
   } catch(e) {
     errEl.textContent = e.message;
@@ -4797,7 +4809,10 @@ async function sbEnroll2FA(token) {
   });
   const data = await res.json().catch(()=>({}));
   if(!res.ok) {
-    console.error('2FA enroll error:', JSON.stringify(data));
+    console.error('[2FA DEBUG] enroll error:', JSON.stringify(data));
+    if(data.error_code === 'insufficient_aal') {
+      throw new Error('Já existe um 2FA ativo nesta conta. Para reconfigurar, delete o fator existente em Supabase → Authentication → Users → seu usuário → MFA Factors.');
+    }
     throw new Error(data.message || data.msg || data.error_description || data.error || `Erro ${res.status}: ${res.statusText}`);
   }
   return data;
