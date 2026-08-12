@@ -437,6 +437,43 @@
           <button class="btn btn-primary btn-sm view-hidden" onclick="abrirModalPagar()">+ Adicionar</button>
         </div>
       </div>
+
+      <div class="card mb-3" style="padding:14px 16px;">
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+          <div style="flex:1;min-width:160px;">
+            <label class="form-label" style="font-size:11px;">Buscar</label>
+            <input class="form-input" id="pagar-f-busca" placeholder="Descrição, fornecedor..." oninput="renderPagar()" style="padding:7px 10px;font-size:13px;">
+          </div>
+          <div style="min-width:130px;">
+            <label class="form-label" style="font-size:11px;">De</label>
+            <input class="form-input" type="date" id="pagar-f-data-de" onchange="renderPagar()" style="padding:7px 10px;font-size:13px;">
+          </div>
+          <div style="min-width:130px;">
+            <label class="form-label" style="font-size:11px;">Até</label>
+            <input class="form-input" type="date" id="pagar-f-data-ate" onchange="renderPagar()" style="padding:7px 10px;font-size:13px;">
+          </div>
+          <div style="min-width:130px;">
+            <label class="form-label" style="font-size:11px;">Valor exato</label>
+            <input class="form-input" type="text" id="pagar-f-valor" placeholder="0,00" oninput="renderPagar()" style="padding:7px 10px;font-size:13px;">
+          </div>
+          <div style="min-width:180px;">
+            <label class="form-label" style="font-size:11px;">Categoria</label>
+            <select class="form-select" id="pagar-f-categoria" onchange="renderPagar()" style="padding:7px 10px;font-size:13px;">
+              <option value="">Todas</option>
+            </select>
+          </div>
+          <div>
+            <button class="btn btn-ghost btn-sm" onclick="limparFiltros('pagar')" title="Limpar filtros">✕ Limpar</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
+          <span class="chip" onclick="aplicarAtalhoData('pagar','hoje')" style="font-size:11px;padding:4px 10px;">Hoje</span>
+          <span class="chip" onclick="aplicarAtalhoData('pagar','7dias')" style="font-size:11px;padding:4px 10px;">Últimos 7 dias</span>
+          <span class="chip" onclick="aplicarAtalhoData('pagar','30dias')" style="font-size:11px;padding:4px 10px;">Últimos 30 dias</span>
+          <span class="chip" onclick="aplicarAtalhoData('pagar','mes-atual')" style="font-size:11px;padding:4px 10px;">Este mês</span>
+          <span class="chip" onclick="aplicarAtalhoData('pagar','mes-passado')" style="font-size:11px;padding:4px 10px;">Mês passado</span>
+        </div>
+      </div>
       <div id="bulk-bar-pagar" style="display:none;background:var(--red-dim);border:1px solid rgba(239,68,68,.3);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:10px;flex-align:center;gap:12px;align-items:center;">
         <span id="bulk-count-pagar" style="font-size:13px;color:#f87171;flex:1;"></span>
         <button class="btn btn-danger btn-sm" onclick="excluirSelecionados('pagar')">🗑 Excluir selecionados</button>
@@ -469,6 +506,43 @@
           <button class="btn btn-primary btn-sm view-hidden" onclick="abrirModalReceber()">+ Adicionar</button>
         </div>
       </div>
+
+      <div class="card mb-3" style="padding:14px 16px;">
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+          <div style="flex:1;min-width:160px;">
+            <label class="form-label" style="font-size:11px;">Buscar</label>
+            <input class="form-input" id="receb-f-busca" placeholder="Descrição, fornecedor..." oninput="renderReceber()" style="padding:7px 10px;font-size:13px;">
+          </div>
+          <div style="min-width:130px;">
+            <label class="form-label" style="font-size:11px;">De</label>
+            <input class="form-input" type="date" id="receb-f-data-de" onchange="renderReceber()" style="padding:7px 10px;font-size:13px;">
+          </div>
+          <div style="min-width:130px;">
+            <label class="form-label" style="font-size:11px;">Até</label>
+            <input class="form-input" type="date" id="receb-f-data-ate" onchange="renderReceber()" style="padding:7px 10px;font-size:13px;">
+          </div>
+          <div style="min-width:130px;">
+            <label class="form-label" style="font-size:11px;">Valor exato</label>
+            <input class="form-input" type="text" id="receb-f-valor" placeholder="0,00" oninput="renderReceber()" style="padding:7px 10px;font-size:13px;">
+          </div>
+          <div style="min-width:180px;">
+            <label class="form-label" style="font-size:11px;">Categoria</label>
+            <select class="form-select" id="receb-f-categoria" onchange="renderReceber()" style="padding:7px 10px;font-size:13px;">
+              <option value="">Todas</option>
+            </select>
+          </div>
+          <div>
+            <button class="btn btn-ghost btn-sm" onclick="limparFiltros('receb')" title="Limpar filtros">✕ Limpar</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
+          <span class="chip" onclick="aplicarAtalhoData('receb','hoje')" style="font-size:11px;padding:4px 10px;">Hoje</span>
+          <span class="chip" onclick="aplicarAtalhoData('receb','7dias')" style="font-size:11px;padding:4px 10px;">Últimos 7 dias</span>
+          <span class="chip" onclick="aplicarAtalhoData('receb','30dias')" style="font-size:11px;padding:4px 10px;">Últimos 30 dias</span>
+          <span class="chip" onclick="aplicarAtalhoData('receb','mes-atual')" style="font-size:11px;padding:4px 10px;">Este mês</span>
+          <span class="chip" onclick="aplicarAtalhoData('receb','mes-passado')" style="font-size:11px;padding:4px 10px;">Mês passado</span>
+        </div>
+      </div>
       <div id="bulk-bar-receber" style="display:none;background:var(--red-dim);border:1px solid rgba(239,68,68,.3);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:10px;display:none;gap:12px;align-items:center;">
         <span id="bulk-count-receber" style="font-size:13px;color:#f87171;flex:1;"></span>
         <button class="btn btn-danger btn-sm" onclick="excluirSelecionados('receber')">🗑 Excluir selecionados</button>
@@ -477,7 +551,7 @@
       <div class="card"><div class="table-wrap"><table>
         <thead><tr>
           <th style="width:32px;"><input type="checkbox" onchange="selecionarTodos('receber',this.checked)" style="cursor:pointer;accent-color:var(--loc);width:15px;height:15px;" title="Selecionar todos"></th>
-          <th>Empresa</th><th>Descrição</th><th>Data Prevista</th><th>Valor</th><th></th>
+          <th>Empresa</th><th>Descrição</th><th>Data Prevista</th><th>Valor</th><th>Categoria</th><th></th>
         </tr></thead>
         <tbody id="receber-tbody"></tbody>
       </table></div></div>
@@ -563,9 +637,44 @@
           </button>
           <button class="btn btn-primary btn-sm" onclick="abrirModalRealizadoManual()">+ Manual</button>
           <button class="btn btn-ghost btn-sm" onclick="reclassificarAutomaticamente()">🪄 Reclassificar</button>
-          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('restaurar-cat-file').click()">📂 Restaurar categorias de backup</button>
-          <input type="file" id="restaurar-cat-file" accept=".json" style="display:none;" onchange="restaurarCategoriasDeBackup(this)">
           <button class="btn btn-danger btn-sm" onclick="limparRealizados()">Limpar</button>
+        </div>
+      </div>
+
+      <div class="card mb-3" style="padding:14px 16px;">
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+          <div style="flex:1;min-width:160px;">
+            <label class="form-label" style="font-size:11px;">Buscar</label>
+            <input class="form-input" id="real-f-busca" placeholder="Descrição, fornecedor..." oninput="renderRealizados()" style="padding:7px 10px;font-size:13px;">
+          </div>
+          <div style="min-width:130px;">
+            <label class="form-label" style="font-size:11px;">De</label>
+            <input class="form-input" type="date" id="real-f-data-de" onchange="renderRealizados()" style="padding:7px 10px;font-size:13px;">
+          </div>
+          <div style="min-width:130px;">
+            <label class="form-label" style="font-size:11px;">Até</label>
+            <input class="form-input" type="date" id="real-f-data-ate" onchange="renderRealizados()" style="padding:7px 10px;font-size:13px;">
+          </div>
+          <div style="min-width:130px;">
+            <label class="form-label" style="font-size:11px;">Valor exato</label>
+            <input class="form-input" type="text" id="real-f-valor" placeholder="0,00" oninput="renderRealizados()" style="padding:7px 10px;font-size:13px;">
+          </div>
+          <div style="min-width:180px;">
+            <label class="form-label" style="font-size:11px;">Categoria</label>
+            <select class="form-select" id="real-f-categoria" onchange="renderRealizados()" style="padding:7px 10px;font-size:13px;">
+              <option value="">Todas</option>
+            </select>
+          </div>
+          <div>
+            <button class="btn btn-ghost btn-sm" onclick="limparFiltros('real')" title="Limpar filtros">✕ Limpar</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
+          <span class="chip" onclick="aplicarAtalhoData('real','hoje')" style="font-size:11px;padding:4px 10px;">Hoje</span>
+          <span class="chip" onclick="aplicarAtalhoData('real','7dias')" style="font-size:11px;padding:4px 10px;">Últimos 7 dias</span>
+          <span class="chip" onclick="aplicarAtalhoData('real','30dias')" style="font-size:11px;padding:4px 10px;">Últimos 30 dias</span>
+          <span class="chip" onclick="aplicarAtalhoData('real','mes-atual')" style="font-size:11px;padding:4px 10px;">Este mês</span>
+          <span class="chip" onclick="aplicarAtalhoData('real','mes-passado')" style="font-size:11px;padding:4px 10px;">Mês passado</span>
         </div>
       </div>
       <div class="grid-2 mb-4" id="realizados-resumo"></div>
@@ -760,7 +869,7 @@
     <div class="form-group"><label class="form-label">Fornecedor / Descrição</label><input class="form-input" id="pagar-desc" placeholder="Ex: Aluguel, Fornecedor XYZ..."></div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Valor (R$)</label><input class="form-input" id="pagar-valor" type="number" step="0.01" placeholder="0,00"></div>
-      <div class="form-group"><label class="form-label">Categoria</label><select class="form-select" id="pagar-categoria"><option>Aluguel</option><option>Folha de Pagamento</option><option>Fornecedores</option><option>Impostos</option><option>Serviços</option><option>Utilidades</option><option>Outros</option></select></div>
+      <div class="form-group"><label class="form-label">Categoria</label><select class="form-select" id="pagar-categoria"></select></div>
     </div>
     <div class="modal-footer"><button class="btn btn-ghost" onclick="fecharModal('modal-pagar')">Cancelar</button><button class="btn btn-primary" onclick="salvarPagar()">Salvar</button></div>
   </div>
@@ -775,7 +884,10 @@
       <div class="form-group"><label class="form-label">Data Prevista</label><input class="form-input" id="receber-data" type="date"></div>
     </div>
     <div class="form-group"><label class="form-label">Cliente / Descrição</label><input class="form-input" id="receber-desc" placeholder="Ex: Mensalidades, Locação quadra..."></div>
-    <div class="form-group"><label class="form-label">Valor (R$)</label><input class="form-input" id="receber-valor" type="number" step="0.01" placeholder="0,00"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Valor (R$)</label><input class="form-input" id="receber-valor" type="number" step="0.01" placeholder="0,00"></div>
+      <div class="form-group"><label class="form-label">Categoria</label><select class="form-select" id="receber-categoria"></select></div>
+    </div>
     <div class="modal-footer"><button class="btn btn-ghost" onclick="fecharModal('modal-receber')">Cancelar</button><button class="btn btn-primary" onclick="salvarReceber()">Salvar</button></div>
   </div>
 </div>
@@ -840,7 +952,7 @@
       </div>
       <div class="form-group">
         <label class="form-label">Empresa</label>
-        <select class="form-select" id="rm-empresa">
+        <select class="form-select" id="rm-empresa" onchange="atualizarSubcat()">
           <option>Locação</option><option>Funcional</option><option>Comércio</option><option>Gestão</option>
         </select>
       </div>
@@ -2033,7 +2145,9 @@ function excluirSaldo(id){if(!confirm('Excluir esta conta?'))return;STATE.saldos
 // PAGAR
 // ════════════════════════════════════════
 function renderPagar(){
-  const lista=pagarFiltro==='todas'?STATE.pagar:STATE.pagar.filter(p=>p.empresa===pagarFiltro);
+  let lista=pagarFiltro==='todas'?STATE.pagar:STATE.pagar.filter(p=>p.empresa===pagarFiltro);
+  popularFiltroCategoria('pagar','despesa');
+  lista = aplicarFiltrosGenericos(lista, 'pagar');
   const sorted=[...lista].sort((a,b)=>a.data.localeCompare(b.data));
   const hoje=dateToISO(new Date());
   const tbody=document.getElementById('pagar-tbody');
@@ -2041,13 +2155,15 @@ function renderPagar(){
   tbody.innerHTML=sorted.map(p=>{
     const vencido=p.data<hoje;
     const empClass=EMP_CLASS[p.empresa]||'nc';
+    const catInfoP = p.categoria ? CATS_DESPESA.find(c=>c.id===p.categoria) : null;
+    const catLabelP = catInfoP ? catInfoP.label : (p.categoria || '<span style="color:var(--red);">⚠ Sem categoria</span>');
     return`<tr>
       <td style="width:32px;">${IS_VIEW_MODE?'':`<input type="checkbox" class="sel-pagar" data-id="${p.id}" style="cursor:pointer;accent-color:var(--loc);width:15px;height:15px;">`}</td>
       <td><span class="badge badge-${empClass}">${p.empresa}</span></td>
       <td>${p.desc}</td>
       <td class="${vencido?'text-red':''}">${formatDate(p.data)}${vencido?' ⚠':''}</td>
       <td class="mono text-red">${brl(p.valor)}</td>
-      <td class="text-muted">${p.categoria||''}</td>
+      <td class="text-muted" style="font-size:12px;">${catLabelP}</td>
       <td>${IS_VIEW_MODE?'':`<div class="flex-gap gap-2"><button class="btn btn-ghost btn-sm" onclick="editarPagar('${p.id}')">Editar</button><button class="btn btn-ghost btn-sm" onclick="clonarPagar('${p.id}')" title="Duplicar">⧉</button><button class="btn btn-danger btn-sm" onclick="excluirPagar('${p.id}')">×</button></div>`}</td>
     </tr>`;
   }).join('');
@@ -2083,8 +2199,21 @@ function excluirSelecionados(tipo){
 function abrirModalPagar(id){
   EDIT_ID=id||null;
   document.getElementById('modal-pagar-title').textContent=id?'Editar Conta a Pagar':'Adicionar Conta a Pagar';
-  if(id){const p=STATE.pagar.find(x=>x.id===id);document.getElementById('pagar-empresa').value=p.empresa;document.getElementById('pagar-data').value=p.data;document.getElementById('pagar-desc').value=p.desc;document.getElementById('pagar-valor').value=p.valor;document.getElementById('pagar-categoria').value=p.categoria||'Outros';}
-  else{document.getElementById('pagar-empresa').value='Locação';document.getElementById('pagar-data').value=dateToISO(new Date());document.getElementById('pagar-desc').value='';document.getElementById('pagar-valor').value='';document.getElementById('pagar-categoria').value='Outros';}
+  const catSel = document.getElementById('pagar-categoria');
+  if(id){
+    const p=STATE.pagar.find(x=>x.id===id);
+    document.getElementById('pagar-empresa').value=p.empresa;
+    document.getElementById('pagar-data').value=p.data;
+    document.getElementById('pagar-desc').value=p.desc;
+    document.getElementById('pagar-valor').value=p.valor;
+    catSel.innerHTML = buildCatOptions('despesa', p.categoria||'');
+  } else {
+    document.getElementById('pagar-empresa').value='Locação';
+    document.getElementById('pagar-data').value=dateToISO(new Date());
+    document.getElementById('pagar-desc').value='';
+    document.getElementById('pagar-valor').value='';
+    catSel.innerHTML = buildCatOptions('despesa', '');
+  }
   document.getElementById('modal-pagar').style.display='flex';
 }
 function editarPagar(id){abrirModalPagar(id);}
@@ -2096,6 +2225,7 @@ function clonarPagar(id){
 function salvarPagar(){
   const emp=document.getElementById('pagar-empresa').value,data=document.getElementById('pagar-data').value,desc=document.getElementById('pagar-desc').value.trim(),valor=parseFloat(document.getElementById('pagar-valor').value),cat=document.getElementById('pagar-categoria').value;
   if(!desc||!data||isNaN(valor)){toast('Preencha todos os campos.','warning');return;}
+  if(!cat){toast('Selecione uma categoria.','warning');return;}
   if(EDIT_ID){const idx=STATE.pagar.findIndex(p=>p.id===EDIT_ID);STATE.pagar[idx]={...STATE.pagar[idx],empresa:emp,data,desc,valor,categoria:cat};}
   else STATE.pagar.push({id:uid(),empresa:emp,data,desc,valor,categoria:cat});
   saveToStorage();fecharModal('modal-pagar');renderPagar();
@@ -2106,18 +2236,23 @@ function excluirPagar(id){if(!confirm('Excluir?'))return;STATE.pagar=STATE.pagar
 // RECEBER
 // ════════════════════════════════════════
 function renderReceber(){
-  const lista=receberFiltro==='todas'?STATE.receber:STATE.receber.filter(r=>r.empresa===receberFiltro);
+  let lista=receberFiltro==='todas'?STATE.receber:STATE.receber.filter(r=>r.empresa===receberFiltro);
+  popularFiltroCategoria('receb','receita');
+  lista = aplicarFiltrosGenericos(lista, 'receb');
   const sorted=[...lista].sort((a,b)=>a.data.localeCompare(b.data));
   const tbody=document.getElementById('receber-tbody');
-  if(!sorted.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:32px;">Nenhum lançamento.</td></tr>';return;}
+  if(!sorted.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:32px;">Nenhum lançamento.</td></tr>';return;}
   tbody.innerHTML=sorted.map(r=>{
     const empClass=EMP_CLASS[r.empresa]||'nc';
+    const catInfoR = r.categoria ? CATS_RECEITA.find(c=>c.id===r.categoria) : null;
+    const catLabelR = catInfoR ? catInfoR.label : (r.categoria ? r.categoria : '<span style="color:var(--red);">⚠ Sem categoria</span>');
     return`<tr>
       <td style="width:32px;">${IS_VIEW_MODE?'':`<input type="checkbox" class="sel-receber" data-id="${r.id}" style="cursor:pointer;accent-color:var(--loc);width:15px;height:15px;">`}</td>
       <td><span class="badge badge-${empClass}">${r.empresa}</span></td>
       <td>${r.desc}</td>
       <td>${formatDate(r.data)}</td>
       <td class="mono text-green">${brl(r.valor)}</td>
+      <td class="text-muted" style="font-size:12px;">${catLabelR}</td>
       <td>${IS_VIEW_MODE?'':`<div class="flex-gap gap-2"><button class="btn btn-ghost btn-sm" onclick="editarReceber('${r.id}')">Editar</button><button class="btn btn-ghost btn-sm" onclick="clonarReceber('${r.id}')" title="Duplicar">⧉</button><button class="btn btn-danger btn-sm" onclick="excluirReceber('${r.id}')">×</button></div>`}</td>
     </tr>`;
   }).join('');
@@ -2126,8 +2261,21 @@ function renderReceber(){
 function abrirModalReceber(id){
   EDIT_ID=id||null;
   document.getElementById('modal-receber-title').textContent=id?'Editar Conta a Receber':'Adicionar Conta a Receber';
-  if(id){const r=STATE.receber.find(x=>x.id===id);document.getElementById('receber-empresa').value=r.empresa;document.getElementById('receber-data').value=r.data;document.getElementById('receber-desc').value=r.desc;document.getElementById('receber-valor').value=r.valor;}
-  else{document.getElementById('receber-empresa').value='Locação';document.getElementById('receber-data').value=dateToISO(new Date());document.getElementById('receber-desc').value='';document.getElementById('receber-valor').value='';}
+  const catSel = document.getElementById('receber-categoria');
+  if(id){
+    const r=STATE.receber.find(x=>x.id===id);
+    document.getElementById('receber-empresa').value=r.empresa;
+    document.getElementById('receber-data').value=r.data;
+    document.getElementById('receber-desc').value=r.desc;
+    document.getElementById('receber-valor').value=r.valor;
+    catSel.innerHTML = buildCatOptions('receita', r.categoria||'');
+  } else {
+    document.getElementById('receber-empresa').value='Locação';
+    document.getElementById('receber-data').value=dateToISO(new Date());
+    document.getElementById('receber-desc').value='';
+    document.getElementById('receber-valor').value='';
+    catSel.innerHTML = buildCatOptions('receita', '');
+  }
   document.getElementById('modal-receber').style.display='flex';
 }
 function editarReceber(id){abrirModalReceber(id);}
@@ -2137,10 +2285,11 @@ function clonarReceber(id){
   saveToStorage();renderReceber();
 }
 function salvarReceber(){
-  const emp=document.getElementById('receber-empresa').value,data=document.getElementById('receber-data').value,desc=document.getElementById('receber-desc').value.trim(),valor=parseFloat(document.getElementById('receber-valor').value);
+  const emp=document.getElementById('receber-empresa').value,data=document.getElementById('receber-data').value,desc=document.getElementById('receber-desc').value.trim(),valor=parseFloat(document.getElementById('receber-valor').value),cat=document.getElementById('receber-categoria').value;
   if(!desc||!data||isNaN(valor)){toast('Preencha todos os campos.','warning');return;}
-  if(EDIT_ID){const idx=STATE.receber.findIndex(r=>r.id===EDIT_ID);STATE.receber[idx]={...STATE.receber[idx],empresa:emp,data,desc,valor};}
-  else STATE.receber.push({id:uid(),empresa:emp,data,desc,valor});
+  if(!cat){toast('Selecione uma categoria.','warning');return;}
+  if(EDIT_ID){const idx=STATE.receber.findIndex(r=>r.id===EDIT_ID);STATE.receber[idx]={...STATE.receber[idx],empresa:emp,data,desc,valor,categoria:cat};}
+  else STATE.receber.push({id:uid(),empresa:emp,data,desc,valor,categoria:cat});
   saveToStorage();fecharModal('modal-receber');renderReceber();
 }
 function excluirReceber(id){
@@ -2335,27 +2484,54 @@ function parseLetzplay(texto) {
 
 // ── Preview table ─────────────────────────────
 function exibirPreview(rows) {
+  const tipoDetect = importTipo==='pagar' ? 'despesa' : 'receita';
+
+  // Auto-detecta categoria de cada linha
+  rows.forEach(r=>{
+    if(!r.categoria) r.categoria = detectarCategoria(tipoDetect, (r.desc||'')+' '+(r.nome||''));
+    if(importTipo==='pagar' && r.empresa==='Comércio' && !r.subcat) {
+      r.subcat = detectarSubcat((r.desc||'')+' '+(r.nome||''), r.empresa);
+    }
+  });
+
   document.getElementById('import-count-label').textContent = `${rows.length} lançamento(s) encontrado(s) — revise e confirme:`;
 
   const empOptions = [...EMPRESAS,'—'].map(e=>`<option value="${e}">${e}</option>`).join('');
 
   const tbody = rows.map((r,i)=>`
     <tr>
-      <td style="color:var(--text-muted);font-size:11px;">${r.nome}</td>
-      <td>${r.desc}</td>
-      <td>${formatDate(r.data)}</td>
-      <td class="mono">${brl(r.valor)}</td>
+      <td style="color:var(--text-muted);font-size:11px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.nome}">${r.nome}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.desc}">${r.desc}</td>
+      <td style="white-space:nowrap;">${formatDate(r.data)}</td>
+      <td class="mono" style="white-space:nowrap;">${brl(r.valor)}</td>
       <td>
         <select class="import-empresa-select" data-idx="${i}" style="background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text);font-size:11px;outline:none;">
           ${empOptions}
+        </select>
+      </td>
+      <td>
+        <select class="import-categoria-select" data-idx="${i}" style="background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text);font-size:11px;outline:none;max-width:180px;">
+          ${buildCatOptions(tipoDetect, r.categoria)}
         </select>
       </td>
     </tr>
   `).join('');
 
   document.getElementById('import-preview-table').innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;padding:8px 0;">
+      <span style="font-size:12px;color:var(--text-muted);font-weight:600;">Aplicar em todos:</span>
+      <select id="import-bulk-emp" style="background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:4px 8px;color:var(--text);font-size:12px;">
+        <option value="">— Empresa —</option>
+        ${EMPRESAS.map(e=>`<option value="${e}">${e}</option>`).join('')}
+      </select>
+      <select id="import-bulk-cat" style="background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:4px 8px;color:var(--text);font-size:12px;max-width:220px;">
+        <option value="">— Categoria —</option>
+        ${buildCatOptions(tipoDetect,'')}
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="aplicarEmTodosImport()">Aplicar</button>
+    </div>
     <table>
-      <thead><tr><th>Fornecedor/Cliente</th><th>Descrição</th><th>Data</th><th>Valor</th><th>Empresa</th></tr></thead>
+      <thead><tr><th>Fornecedor/Cliente</th><th>Descrição</th><th>Data</th><th>Valor</th><th>Empresa</th><th>Categoria</th></tr></thead>
       <tbody>${tbody}</tbody>
     </table>`;
 
@@ -2364,24 +2540,50 @@ function exibirPreview(rows) {
     const idx = parseInt(sel.dataset.idx);
     sel.value = rows[idx].empresa;
   });
+  document.querySelectorAll('.import-categoria-select').forEach(sel=>{
+    const idx = parseInt(sel.dataset.idx);
+    sel.value = rows[idx].categoria;
+  });
 
   document.getElementById('import-step1').style.display='none';
   document.getElementById('import-step2').style.display='';
 }
 
+function aplicarEmTodosImport() {
+  const emp = document.getElementById('import-bulk-emp')?.value;
+  const cat = document.getElementById('import-bulk-cat')?.value;
+  if(emp) document.querySelectorAll('.import-empresa-select').forEach(sel=>{ sel.value=emp; });
+  if(cat) document.querySelectorAll('.import-categoria-select').forEach(sel=>{ sel.value=cat; });
+}
+
 function confirmarImport() {
-  // Read empresas from selects
+  // Read empresas and categorias from selects
   document.querySelectorAll('.import-empresa-select').forEach(sel=>{
     const idx=parseInt(sel.dataset.idx);
     importRows[idx].empresa=sel.value;
   });
+  document.querySelectorAll('.import-categoria-select').forEach(sel=>{
+    const idx=parseInt(sel.dataset.idx);
+    importRows[idx].categoria=sel.value;
+  });
+
+  // Bloqueia se algum lançamento estiver sem categoria
+  const semCategoria = importRows.filter(r=>!r.categoria);
+  if(semCategoria.length>0){
+    toast(`⚠ ${semCategoria.length} lançamento(s) sem categoria. Selecione uma categoria para todos antes de importar.`,'warning',5000);
+    document.querySelectorAll('.import-categoria-select').forEach(sel=>{
+      const idx=parseInt(sel.dataset.idx);
+      sel.style.borderColor = !importRows[idx].categoria ? 'var(--red)' : '';
+    });
+    return;
+  }
 
   let adicionados=0;
   importRows.forEach(r=>{
     if(importTipo==='pagar'){
-      STATE.pagar.push({id:uid(),empresa:r.empresa,data:r.data,desc:r.desc,valor:r.valor,categoria:'Outros'});
+      STATE.pagar.push({id:uid(),empresa:r.empresa,data:r.data,desc:r.desc,valor:r.valor,categoria:r.categoria,subcat:r.subcat||null});
     } else {
-      STATE.receber.push({id:uid(),empresa:r.empresa,data:r.data,desc:r.desc,valor:r.valor});
+      STATE.receber.push({id:uid(),empresa:r.empresa,data:r.data,desc:r.desc,valor:r.valor,categoria:r.categoria});
     }
     adicionados++;
   });
@@ -2672,7 +2874,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const chip = e.target.closest('.chip'); if(!chip) return;
     tabs.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
     chip.classList.add('active');
-    ['estimativas','perfil','metas','empresas','notificacoes','backup'].forEach(id=>{
+    ['estimativas','perfil','metas','empresas','notificacoes','categorias','backup'].forEach(id=>{
       const el=document.getElementById('cfg-'+id); if(el) el.style.display='none';
     });
     const cfg = document.getElementById('cfg-'+chip.dataset.cfg);
@@ -3880,6 +4082,93 @@ function renderHistoricoCaixa() {
   },100);
 }
 
+
+// ════════════════════════════════════════
+// FILTROS GENÉRICOS (Realizados, Pagar, Receber)
+// ════════════════════════════════════════
+function limparFiltros(prefix) {
+  const busca = document.getElementById(`${prefix}-f-busca`); if(busca) busca.value='';
+  const de = document.getElementById(`${prefix}-f-data-de`); if(de) de.value='';
+  const ate = document.getElementById(`${prefix}-f-data-ate`); if(ate) ate.value='';
+  const valor = document.getElementById(`${prefix}-f-valor`); if(valor) valor.value='';
+  const cat = document.getElementById(`${prefix}-f-categoria`); if(cat) cat.value='';
+  if(prefix==='real') renderRealizados();
+  if(prefix==='pagar') renderPagar();
+  if(prefix==='receb') renderReceber();
+}
+
+function aplicarAtalhoData(prefix, atalho) {
+  const hoje = new Date();
+  let de, ate;
+  if(atalho==='hoje') { de = ate = hoje; }
+  else if(atalho==='7dias') { de = new Date(hoje); de.setDate(de.getDate()-7); ate = hoje; }
+  else if(atalho==='30dias') { de = new Date(hoje); de.setDate(de.getDate()-30); ate = hoje; }
+  else if(atalho==='mes-atual') { de = new Date(hoje.getFullYear(), hoje.getMonth(), 1); ate = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0); }
+  else if(atalho==='mes-passado') { de = new Date(hoje.getFullYear(), hoje.getMonth()-1, 1); ate = new Date(hoje.getFullYear(), hoje.getMonth(), 0); }
+  document.getElementById(`${prefix}-f-data-de`).value = dateToISO(de);
+  document.getElementById(`${prefix}-f-data-ate`).value = dateToISO(ate);
+  if(prefix==='real') renderRealizados();
+  if(prefix==='pagar') renderPagar();
+  if(prefix==='receb') renderReceber();
+}
+
+// Aplica os filtros de texto/data/valor/categoria em uma lista de lançamentos
+function aplicarFiltrosGenericos(lista, prefix) {
+  const busca = document.getElementById(`${prefix}-f-busca`)?.value.trim().toLowerCase();
+  const dataDe = document.getElementById(`${prefix}-f-data-de`)?.value;
+  const dataAte = document.getElementById(`${prefix}-f-data-ate`)?.value;
+  const valorStr = document.getElementById(`${prefix}-f-valor`)?.value.trim();
+  const categoria = document.getElementById(`${prefix}-f-categoria`)?.value;
+
+  let out = lista;
+  if(busca) out = out.filter(r => (r.desc||'').toLowerCase().includes(busca) || (r.nome||'').toLowerCase().includes(busca));
+  if(dataDe) out = out.filter(r => r.data >= dataDe);
+  if(dataAte) out = out.filter(r => r.data <= dataAte);
+  if(valorStr) {
+    const valorNum = parseFloat(valorStr.replace(/\./g,'').replace(',','.'));
+    if(!isNaN(valorNum)) out = out.filter(r => Math.abs(parseFloat(r.valor||0) - valorNum) < 0.01);
+  }
+  if(categoria) out = out.filter(r => r.categoria === categoria);
+  return out;
+}
+
+// Popula o select de categoria do filtro com base no tipo (despesa/receita/ambos)
+function popularFiltroCategoria(prefix, tipo) {
+  const sel = document.getElementById(`${prefix}-f-categoria`);
+  if(!sel) return;
+
+  // Contas a Pagar usa uma lista simples de categorias (não as do Bling)
+  if(tipo==='pagar-simples') {
+    const opcoes = ['Aluguel','Folha de Pagamento','Fornecedores','Impostos','Serviços','Utilidades','Outros'];
+    const valorAtual = sel.value;
+    sel.innerHTML = '<option value="">Todas</option>' + opcoes.map(o=>`<option value="${o}">${o}</option>`).join('');
+    sel.value = valorAtual;
+    return;
+  }
+  // Contas a Receber não possui campo de categoria - esconde o filtro
+  if(tipo==='sem-categoria') {
+    const wrap = sel.closest('div');
+    if(wrap) wrap.style.display = 'none';
+    return;
+  }
+
+  const valorAtual = sel.value;
+  let cats = [];
+  if(tipo==='despesa') cats = CATS_DESPESA;
+  else if(tipo==='receita') cats = CATS_RECEITA;
+  else cats = [...CATS_DESPESA, ...CATS_RECEITA];
+  const grupos = {};
+  cats.forEach(c=>{ if(!grupos[c.grupo]) grupos[c.grupo]=[]; grupos[c.grupo].push(c); });
+  let optHtml = '<option value="">Todas</option>';
+  Object.entries(grupos).forEach(([grupo, itens])=>{
+    optHtml += `<optgroup label="${grupo}">`;
+    itens.forEach(c=>{ optHtml += `<option value="${c.id}">${c.label}</option>`; });
+    optHtml += '</optgroup>';
+  });
+  sel.innerHTML = optHtml;
+  sel.value = valorAtual;
+}
+
 // ════════════════════════════════════════
 // REALIZADOS
 // ════════════════════════════════════════
@@ -4080,9 +4369,9 @@ function exibirPreviewRealizado(rows) {
         <td style="font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.desc}">${r.desc}</td>
         <td style="white-space:nowrap;">${formatDate(r.data)}</td>
         <td class="mono ${r.tipo==='pago'?'text-red':'text-green'}" style="white-space:nowrap;">${brl(r.valor)}</td>
-        <td><select class="realizado-emp-sel" data-idx="${i}" style="background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text);font-size:11px;">${empOptions}</select></td>
+        <td><select class="realizado-emp-sel" data-idx="${i}" onchange="toggleSubcatRealizadoRow(this)" style="background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text);font-size:11px;">${empOptions}</select></td>
         <td><select class="realizado-cat-sel" data-idx="${i}" style="background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text);font-size:11px;max-width:180px;">${buildCatOptions(r.tipo==='pago'?'despesa':'receita', r.categoria)}</select></td>
-        <td>${r.empresa==='Comércio'?`<select class="realizado-subcat-sel" data-idx="${i}" style="background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text);font-size:11px;"><option value="">—</option><option value="bar" ${r.subcat==='bar'?'selected':''}>Bar</option><option value="loja" ${r.subcat==='loja'?'selected':''}>Loja</option></select>`:'—'}</td>
+        <td class="subcat-cell" data-idx="${i}">${r.empresa==='Comércio'?`<select class="realizado-subcat-sel" data-idx="${i}" style="background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text);font-size:11px;"><option value="">—</option><option value="bar" ${r.subcat==='bar'?'selected':''}>Bar</option><option value="loja" ${r.subcat==='loja'?'selected':''}>Loja</option></select>`:'—'}</td>
       </tr>`).join('')}</tbody>
     </table>`;
   document.querySelectorAll('.realizado-emp-sel').forEach(sel=>{
@@ -4090,6 +4379,19 @@ function exibirPreviewRealizado(rows) {
   });
   document.getElementById('import-realizado-step1').style.display='none';
   document.getElementById('import-realizado-step2').style.display='';
+}
+
+// Alterna o campo Bar/Loja dinamicamente quando a empresa muda na revisão
+function toggleSubcatRealizadoRow(selectEl) {
+  const idx = selectEl.dataset.idx;
+  const empresa = selectEl.value;
+  const cell = document.querySelector(`.subcat-cell[data-idx="${idx}"]`);
+  if(!cell) return;
+  if(empresa === 'Comércio') {
+    cell.innerHTML = `<select class="realizado-subcat-sel" data-idx="${idx}" style="background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text);font-size:11px;"><option value="">—</option><option value="bar">Bar</option><option value="loja">Loja</option></select>`;
+  } else {
+    cell.innerHTML = '—';
+  }
 }
 
 function aplicarEmTodos() {
@@ -4150,6 +4452,8 @@ function renderRealizados() {
   let lista = STATE.realizados;
   if(realizadosTipoFiltro !== 'todos') lista = lista.filter(r=>r.tipo===realizadosTipoFiltro);
   if(realizadosEmpFiltro !== 'todas') lista = lista.filter(r=>r.empresa===realizadosEmpFiltro);
+  popularFiltroCategoria('real', realizadosTipoFiltro==='pago'?'despesa':realizadosTipoFiltro==='recebido'?'receita':'ambos');
+  lista = aplicarFiltrosGenericos(lista, 'real');
 
   const totalPago = STATE.realizados.filter(r=>r.tipo==='pago').reduce((t,r)=>t+parseFloat(r.valor||0),0);
   const totalRec  = STATE.realizados.filter(r=>r.tipo==='recebido').reduce((t,r)=>t+parseFloat(r.valor||0),0);
@@ -4948,6 +5252,26 @@ document.addEventListener('click', e=>{
   if(e.target.classList && e.target.classList.contains('modal-backdrop') && e.target.id !== 'search-modal-backdrop'){
     e.stopPropagation();
     e.preventDefault();
+  }
+}, true);
+
+// ── Aceitar colagem de valores no formato brasileiro (1.500,00) ──
+document.addEventListener('paste', e=>{
+  const el = e.target;
+  if(el.tagName==='INPUT' && el.type==='number') {
+    const texto = (e.clipboardData || window.clipboardData).getData('text');
+    // Detecta formato brasileiro: tem vírgula como decimal
+    if(/,/.test(texto)) {
+      e.preventDefault();
+      // Remove pontos de milhar, troca vírgula decimal por ponto
+      const limpo = texto.replace(/\./g,'').replace(',', '.').replace(/[^\d.-]/g,'');
+      const valor = parseFloat(limpo);
+      if(!isNaN(valor)) {
+        el.value = valor;
+        el.dispatchEvent(new Event('input', {bubbles:true}));
+        el.dispatchEvent(new Event('change', {bubbles:true}));
+      }
+    }
   }
 }, true);
 
