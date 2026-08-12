@@ -1243,17 +1243,25 @@ async function sbGetAll(table) {
 
 async function sbUpsert(table, rows) {
   if(!rows.length) return;
-  const res = await fetch(`${SB_URL}/rest/v1/${table}`, {
-    method: 'POST',
-    headers: {
-      'apikey': SB_KEY,
-      'Authorization': `Bearer ${AUTH.session}`,
-      'Content-Type': 'application/json',
-      'Prefer': 'resolution=merge-duplicates'
-    },
-    body: JSON.stringify(rows)
-  });
-  if(!res.ok) { const err = await res.text(); console.error('sbUpsert error:', err); }
+  const BATCH_SIZE = 150; // evita payloads grandes demais numa única requisição
+  for(let i=0; i<rows.length; i+=BATCH_SIZE) {
+    const batch = rows.slice(i, i+BATCH_SIZE);
+    const res = await fetch(`${SB_URL}/rest/v1/${table}?on_conflict=id`, {
+      method: 'POST',
+      headers: {
+        'apikey': SB_KEY,
+        'Authorization': `Bearer ${AUTH.session}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify(batch)
+    });
+    if(!res.ok) {
+      const errText = await res.text();
+      console.error(`sbUpsert error em ${table} (lote ${i}-${i+batch.length}):`, errText);
+      throw new Error(`Falha ao salvar em "${table}": ${errText.slice(0,200)}`);
+    }
+  }
 }
 
 async function sbDelete(table, id) {
@@ -1334,24 +1342,41 @@ async function sbDeleteItem(table, id) {
 // ── Save ALL state to Supabase (bulk sync) ────────────────
 async function syncToSupabase() {
   if(!AUTH.session || !AUTH.userId) return;
-  try {
-    // Upsert all tables
-    if(STATE.saldos.length)      await sbUpsert('vita_saldos',     STATE.saldos.map(r=>({...r,user_id:AUTH.userId})));
-    if(STATE.pagar.length)       await sbUpsert('vita_pagar',      STATE.pagar.map(r=>({...r,user_id:AUTH.userId})));
-    if(STATE.receber.length)     await sbUpsert('vita_receber',    STATE.receber.map(r=>({...r,user_id:AUTH.userId})));
-    if(STATE.realizados.length)  await sbUpsert('vita_realizados', STATE.realizados.map(r=>({...r,user_id:AUTH.userId})));
-    if(STATE.estimativas.length) await sbUpsert('vita_estimativas',STATE.estimativas.map(r=>({...r,user_id:AUTH.userId,dias_semana:JSON.stringify(r.diasSemana||[])})));
-    // Fechamentos
-    const fechRows = Object.entries(STATE.fechamentos).map(([k,f])=>({
-      id: k, mes_key: k, user_id: AUTH.userId,
-      resumo: JSON.stringify(f.resumo),
-      lancamentos: JSON.stringify(f.lancamentos),
-      obs: f.obs||'', ts: f.ts
-    }));
-    if(fechRows.length) await sbUpsert('vita_fechamentos', fechRows);
-    atualizarAutosave();
+  const erros = [];
+
+  async function tentarUpsert(nomeTabela, rows) {
+    if(!rows.length) return;
+    try {
+      await sbUpsert(nomeTabela, rows);
+    } catch(e) {
+      console.error(`[SYNC] Erro na tabela ${nomeTabela}:`, e.message);
+      erros.push(`${nomeTabela}: ${e.message}`);
+    }
+  }
+
+  await tentarUpsert('vita_saldos',     STATE.saldos.map(r=>({...r,user_id:AUTH.userId})));
+  await tentarUpsert('vita_pagar',      STATE.pagar.map(r=>({...r,user_id:AUTH.userId})));
+  await tentarUpsert('vita_receber',    STATE.receber.map(r=>({...r,user_id:AUTH.userId})));
+  await tentarUpsert('vita_realizados', STATE.realizados.map(r=>({...r,user_id:AUTH.userId})));
+  await tentarUpsert('vita_estimativas',STATE.estimativas.map(r=>({...r,user_id:AUTH.userId,dias_semana:JSON.stringify(r.diasSemana||[])})));
+
+  const fechRows = Object.entries(STATE.fechamentos).map(([k,f])=>({
+    id: k, mes_key: k, user_id: AUTH.userId,
+    resumo: JSON.stringify(f.resumo),
+    lancamentos: JSON.stringify(f.lancamentos),
+    obs: f.obs||'', ts: f.ts
+  }));
+  await tentarUpsert('vita_fechamentos', fechRows);
+
+  atualizarAutosave();
+
+  if(erros.length) {
+    console.error('[SYNC] Falhas na sincronização:', erros);
+    toast(`⚠ Falha ao sincronizar: ${erros[0]}`, 'error', 8000);
+    throw new Error(erros.join(' | '));
+  } else {
     console.log('✓ Synced to Supabase');
-  } catch(e) { console.error('Sync error:', e); }
+  }
 }
 
 async function sbSalvarSnapshot(dados) {
@@ -3210,8 +3235,15 @@ function importarBackup(input) {
       if(backup.config?.notif)    localStorage.setItem('vita_notif_cfg', JSON.stringify(backup.config.notif));
       if(backup.config?.nome)     localStorage.setItem('vita_nome', backup.config.nome);
       saveToStorage(); saveFechamentos();
-      if(AUTH.session) { toast('Sincronizando com servidor...','info',2000); setTimeout(()=>syncToSupabase().then(()=>toast('Backup restaurado e sincronizado!','success')),500); } else { toast('Backup restaurado com sucesso!','success'); }
       renderAll();
+      if(AUTH.session) {
+        toast('Sincronizando com servidor...','info',3000);
+        syncToSupabase()
+          .then(()=>toast(`✓ Backup restaurado: ${STATE.realizados.length} realizados sincronizados!`,'success',6000))
+          .catch(err=>toast(`⚠ Backup carregado localmente, mas falhou ao sincronizar com Supabase: ${err.message}`,'error',10000));
+      } else {
+        toast('Backup restaurado com sucesso!','success');
+      }
     } catch(err){ toast('Erro ao importar backup: '+err.message,'error'); }
   };
   reader.readAsText(file);
