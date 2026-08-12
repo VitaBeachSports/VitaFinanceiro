@@ -348,7 +348,7 @@
     </div>
     <div class="topbar-right">
       <span id="autosave-badge">✓ Salvo</span>
-      <span style="font-size:9px;color:var(--text-dim);" title="Versão do código carregado">v20260812-1601</span>
+      <span style="font-size:9px;color:var(--text-dim);" title="Versão do código carregado">v20260812-1749</span>
       <span id="sb-status" title="Status Supabase" style="font-size:11px;padding:3px 8px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);">⬤ —</span>
       <button class="btn btn-ghost btn-sm" onclick="abrirSearch()" title="Busca rápida (Ctrl+K)">
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -1158,7 +1158,7 @@ let STATE = { saldos:[], pagar:[], receber:[], fechamentos:{}, estimativas:[], r
 // realizados: [{id,tipo,empresa,desc,data,valor,liquidacao}]
 
 // ── Auth state ───────────────────────────────────────────
-let AUTH = { session: null, perfil: null, email: null, mfaFactorId: null, userId: null };
+let AUTH = { session: null, refreshToken: null, perfil: null, email: null, mfaFactorId: null, userId: null };
 let AMBIENTE_REAL = true; // true = dados reais, false = dados de teste
 
 // ── Supabase config ──────────────────────────────────────────────
@@ -1209,6 +1209,31 @@ async function sbVerificar2FA(factorId, code, token) {
   return vData;
 }
 
+async function sbRefreshToken() {
+  if(!AUTH.refreshToken) { console.warn('[TOKEN] Sem refresh_token disponível.'); return false; }
+  try {
+    const res = await fetch(`${SB_URL}/auth/v1/token?grant_type=refresh_token`, {
+      method: 'POST',
+      headers: {'apikey': SB_KEY, 'Content-Type': 'application/json'},
+      body: JSON.stringify({refresh_token: AUTH.refreshToken})
+    });
+    const data = await res.json();
+    if(!res.ok) { console.error('[TOKEN] Falha ao renovar:', JSON.stringify(data)); return false; }
+    AUTH.session = data.access_token;
+    AUTH.refreshToken = data.refresh_token;
+    localStorage.setItem('vita_refresh_token', data.refresh_token||'');
+    console.log('[TOKEN] Sessão renovada com sucesso.');
+    atualizarStatusConexao('online');
+    return true;
+  } catch(e) {
+    console.error('[TOKEN] Erro ao renovar sessão:', e);
+    return false;
+  }
+}
+
+// Renova o token proativamente a cada 45 minutos (antes de expirar em 60min)
+setInterval(()=>{ if(AUTH.session) sbRefreshToken(); }, 45*60*1000);
+
 async function sbListarFactors(token) {
   if(!token) { console.warn('[2FA DEBUG] sbListarFactors: no token'); return []; }
   const res = await fetch(`${SB_URL}/auth/v1/user`, {
@@ -1237,8 +1262,32 @@ async function sbLogout(token) {
 
 // ── Supabase Data Tables ─────────────────────────────────
 
+// Detecta se a resposta indica JWT expirado (código PGRST303 ou HTTP 401)
+function isJwtExpiredError(status, bodyText) {
+  return status === 401 || (bodyText && bodyText.includes('PGRST303')) || (bodyText && bodyText.toLowerCase().includes('jwt expired'));
+}
+
+// Wrapper genérico: executa uma requisição e, se o token expirou, renova e tenta 1 vez de novo
+async function sbFetchComRetry(url, options) {
+  let res = await fetch(url, options);
+  if(!res.ok) {
+    const bodyText = await res.clone().text();
+    if(isJwtExpiredError(res.status, bodyText)) {
+      console.warn('[TOKEN] Sessão expirada detectada, renovando...');
+      atualizarStatusConexao('syncing');
+      const renovou = await sbRefreshToken();
+      if(renovou) {
+        // Atualiza o header Authorization com o novo token e tenta de novo
+        const novasOptions = {...options, headers: {...options.headers, 'Authorization': `Bearer ${AUTH.session}`}};
+        res = await fetch(url, novasOptions);
+      }
+    }
+  }
+  return res;
+}
+
 async function sbGetAll(table) {
-  const res = await fetch(`${SB_URL}/rest/v1/${table}?user_id=eq.${AUTH.userId}&select=*&order=created_at.asc`, {
+  const res = await sbFetchComRetry(`${SB_URL}/rest/v1/${table}?user_id=eq.${AUTH.userId}&select=*&order=created_at.asc`, {
     headers: {'apikey': SB_KEY, 'Authorization': `Bearer ${AUTH.session}`}
   });
   if(!res.ok) return [];
@@ -1250,7 +1299,7 @@ async function sbUpsert(table, rows) {
   const BATCH_SIZE = 150; // evita payloads grandes demais numa única requisição
   for(let i=0; i<rows.length; i+=BATCH_SIZE) {
     const batch = rows.slice(i, i+BATCH_SIZE);
-    const res = await fetch(`${SB_URL}/rest/v1/${table}?on_conflict=id`, {
+    const res = await sbFetchComRetry(`${SB_URL}/rest/v1/${table}?on_conflict=id`, {
       method: 'POST',
       headers: {
         'apikey': SB_KEY,
@@ -1269,7 +1318,7 @@ async function sbUpsert(table, rows) {
 }
 
 async function sbDelete(table, id) {
-  await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${id}`, {
+  await sbFetchComRetry(`${SB_URL}/rest/v1/${table}?id=eq.${id}`, {
     method: 'DELETE',
     headers: {'apikey': SB_KEY, 'Authorization': `Bearer ${AUTH.session}`}
   });
@@ -1467,7 +1516,9 @@ async function fazerLogin() {
   try {
     const data = await sbLogin(email, senha);
     AUTH.session = data.access_token;
+    AUTH.refreshToken = data.refresh_token;
     AUTH.email = email;
+    localStorage.setItem('vita_refresh_token', data.refresh_token||'');
 
     // Check for 2FA factors
     console.log('[2FA DEBUG] checking factors post-login...');
@@ -1501,6 +1552,7 @@ async function verificar2FA() {
     const vData = await sbVerificar2FA(AUTH.mfaFactorId, code, AUTH.session);
     console.log('[2FA DEBUG] login verify result:', JSON.stringify(vData));
     if(vData.access_token) AUTH.session = vData.access_token; // use new aal2 session
+    if(vData.refresh_token) { AUTH.refreshToken = vData.refresh_token; localStorage.setItem('vita_refresh_token', vData.refresh_token); }
     await finalizarLogin(AUTH.session, AUTH.email);
   } catch(e) {
     errEl.textContent = e.message;
