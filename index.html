@@ -348,7 +348,7 @@
     </div>
     <div class="topbar-right">
       <span id="autosave-badge">✓ Salvo</span>
-      <span style="font-size:9px;color:var(--text-dim);" title="Versão do código carregado">v20260812-1539</span>
+      <span style="font-size:9px;color:var(--text-dim);" title="Versão do código carregado">v20260812-1601</span>
       <span id="sb-status" title="Status Supabase" style="font-size:11px;padding:3px 8px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);">⬤ —</span>
       <button class="btn btn-ghost btn-sm" onclick="abrirSearch()" title="Busca rápida (Ctrl+K)">
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -2224,6 +2224,11 @@ function excluirSelecionados(tipo){
   else STATE.receber=STATE.receber.filter(r=>!ids.includes(r.id));
   saveToStorage();
   if(tipo==='pagar') renderPagar(); else renderReceber();
+  if(AUTH.session) {
+    const tabela = tipo==='pagar' ? 'vita_pagar' : 'vita_receber';
+    Promise.all(ids.map(id=>sbDelete(tabela, id)))
+      .catch(e=>{console.error('Erro ao excluir selecionados no Supabase:',e); toast('⚠ Excluído localmente, mas houve falha ao remover do servidor.','warning');});
+  }
 }
 function abrirModalPagar(id){
   EDIT_ID=id||null;
@@ -2259,7 +2264,13 @@ function salvarPagar(){
   else STATE.pagar.push({id:uid(),empresa:emp,data,desc,valor,categoria:cat});
   saveToStorage();fecharModal('modal-pagar');renderPagar();
 }
-function excluirPagar(id){if(!confirm('Excluir?'))return;STATE.pagar=STATE.pagar.filter(p=>p.id!==id);saveToStorage();renderPagar();}
+function excluirPagar(id){
+  if(!confirm('Excluir?'))return;
+  STATE.pagar=STATE.pagar.filter(p=>p.id!==id);
+  saveToStorage();
+  renderPagar();
+  if(AUTH.session) sbDelete('vita_pagar', id).catch(e=>{console.error('Erro ao excluir no Supabase:',e); toast('⚠ Excluído localmente, mas falhou ao remover do servidor.','warning');});
+}
 
 // ════════════════════════════════════════
 // RECEBER
@@ -2325,6 +2336,7 @@ function excluirReceber(id){
   const item=STATE.receber.find(r=>r.id===id); if(!item) return;
   STATE.receber=STATE.receber.filter(r=>r.id!==id);saveToStorage();renderReceber();
   pushUndo('receber',item);
+  if(AUTH.session) sbDelete('vita_receber', id).catch(e=>{console.error('Erro ao excluir no Supabase:',e); toast('⚠ Excluído localmente, mas falhou ao remover do servidor.','warning');});
 }
 
 // ════════════════════════════════════════
@@ -4642,11 +4654,17 @@ function excluirRealizado(id) {
   STATE.realizados=STATE.realizados.filter(r=>r.id!==id);
   saveToStorage(); renderRealizados();
   pushUndo('realizado',item);
+  if(AUTH.session) sbDelete('vita_realizados', id).catch(e=>{console.error('Erro ao excluir no Supabase:',e); toast('⚠ Excluído localmente, mas falhou ao remover do servidor.','warning');});
 }
 
 function limparRealizados() {
   if(!confirm('Limpar todos os realizados?')) return;
+  const idsParaExcluir = STATE.realizados.map(r=>r.id);
   STATE.realizados=[]; saveToStorage(); renderRealizados();
+  if(AUTH.session) {
+    Promise.all(idsParaExcluir.map(id=>sbDelete('vita_realizados', id)))
+      .catch(e=>{console.error('Erro ao limpar no Supabase:',e); toast('⚠ Limpo localmente, mas houve falha ao remover do servidor.','warning');});
+  }
 }
 
 function abrirModalRealizadoManual() {
