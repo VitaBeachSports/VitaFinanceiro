@@ -562,6 +562,9 @@
             Importar Recebidos
           </button>
           <button class="btn btn-primary btn-sm" onclick="abrirModalRealizadoManual()">+ Manual</button>
+          <button class="btn btn-ghost btn-sm" onclick="reclassificarAutomaticamente()">🪄 Reclassificar</button>
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('restaurar-cat-file').click()">📂 Restaurar categorias de backup</button>
+          <input type="file" id="restaurar-cat-file" accept=".json" style="display:none;" onchange="restaurarCategoriasDeBackup(this)">
           <button class="btn btn-danger btn-sm" onclick="limparRealizados()">Limpar</button>
         </div>
       </div>
@@ -2521,7 +2524,7 @@ function confirmarFechamento(){
   const realPago=STATE.realizados.filter(r=>r.tipo==='pago'&&r.data>=iniMes&&r.data<=fimMes);
   const realRec=STATE.realizados.filter(r=>r.tipo==='recebido'&&r.data>=iniMes&&r.data<=fimMes);
   const temReal=realPago.length>0||realRec.length>0;
-  const lancPagar=temReal?realPago.map(r=>({...r,categoria:'Realizados'})):STATE.pagar.filter(p=>p.data>=iniMes&&p.data<=fimMes);
+  const lancPagar=temReal?realPago.map(r=>({...r})):STATE.pagar.filter(p=>p.data>=iniMes&&p.data<=fimMes);
   const lancReceber=temReal?realRec:STATE.receber.filter(r=>r.data>=iniMes&&r.data<=fimMes);
   const totalRec=lancReceber.reduce((t,r)=>t+parseFloat(r.valor||0),0);
   const totalPago=lancPagar.reduce((t,p)=>t+parseFloat(p.valor||0),0);
@@ -4162,7 +4165,7 @@ function renderRealizados() {
   tbody.innerHTML = [...lista].sort((a,b)=>a.data.localeCompare(b.data)).map(r=>{
     const catInfo = r.categoria ? (r.tipo==='pago'?CATS_DESPESA:CATS_RECEITA).find(c=>c.id===r.categoria) : null;
     const catLabel = catInfo ? `${catInfo.grupo} > ${catInfo.label}` : '<span style="color:var(--red);font-size:11px;">⚠ Sem categoria</span>';
-    return`<tr>
+    return`<tr class="realizado-row" data-id="${r.id}" style="cursor:pointer;" onclick="if(!event.target.closest('button'))abrirModalEditarRealizado('${r.id}')">
       <td><span class="badge ${r.tipo==='pago'?'badge-red':'badge-green'}">${r.tipo==='pago'?'Pago':'Recebido'}</span></td>
       <td><span class="badge badge-${EMP_CLASS[r.empresa]||'nc'}">${r.empresa}</span></td>
       <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.desc}">${r.desc}</td>
@@ -4172,6 +4175,126 @@ function renderRealizados() {
       <td class="mono ${r.tipo==='pago'?'text-red':'text-green'}">${brl(r.valor)}</td>
       <td><button class="btn btn-danger btn-sm" onclick="excluirRealizado('${r.id}')">×</button></td>
     </tr>`;}).join('');
+}
+
+// ── Editar lançamento realizado ao clicar na linha ──────────
+function abrirModalEditarRealizado(id) {
+  const item = STATE.realizados.find(r=>r.id===id);
+  if(!item) return;
+  document.getElementById('rm-tipo').value = item.tipo;
+  document.getElementById('rm-empresa').value = item.empresa;
+  document.getElementById('rm-desc').value = item.desc || '';
+  document.getElementById('rm-data').value = item.data || '';
+  document.getElementById('rm-valor').value = item.valor || '';
+  atualizarCatOptions(item.tipo);
+  const catSel = document.getElementById('rm-categoria');
+  if(catSel) catSel.value = item.categoria || '';
+  atualizarSubcat();
+  const subcatSel = document.getElementById('rm-subcat');
+  if(subcatSel && item.subcat) subcatSel.value = item.subcat;
+
+  // Switch modal to edit mode
+  document.querySelector('#modal-realizado-manual .modal-title').textContent = 'Editar Lançamento';
+  const saveBtn = document.querySelector('#modal-realizado-manual .modal-footer .btn-primary');
+  saveBtn.textContent = 'Salvar Alterações';
+  saveBtn.setAttribute('onclick', `salvarEdicaoRealizado('${id}')`);
+  document.getElementById('modal-realizado-manual').style.display='flex';
+}
+
+function salvarEdicaoRealizado(id) {
+  const item = STATE.realizados.find(r=>r.id===id);
+  if(!item) return;
+  const tipo   = document.getElementById('rm-tipo').value;
+  const emp    = document.getElementById('rm-empresa').value;
+  const desc   = document.getElementById('rm-desc').value.trim();
+  const data   = document.getElementById('rm-data').value;
+  const valor  = parseFloat(document.getElementById('rm-valor').value);
+  const cat    = document.getElementById('rm-categoria')?.value;
+  const subcat = document.getElementById('rm-subcat')?.value;
+  if(!desc||!data||isNaN(valor)||valor<=0){ toast('Preencha todos os campos.','warning'); return; }
+  if(!cat){ toast('Selecione uma categoria.','warning'); return; }
+  item.tipo = tipo; item.empresa = emp; item.desc = desc; item.data = data; item.valor = valor;
+  item.categoria = cat; item.subcat = emp==='Comércio' ? subcat : null;
+  saveToStorage();
+  fecharModal('modal-realizado-manual');
+  // Reset modal back to "new" mode for next use
+  document.querySelector('#modal-realizado-manual .modal-title').textContent = 'Lançamento Manual';
+  const saveBtn = document.querySelector('#modal-realizado-manual .modal-footer .btn-primary');
+  saveBtn.textContent = 'Salvar';
+  saveBtn.setAttribute('onclick', 'salvarRealizadoManual()');
+  toast('Lançamento atualizado!','success');
+  renderRealizados();
+}
+
+// ── Reclassificação automática (recuperação de categorias perdidas) ──
+function reclassificarAutomaticamente() {
+  const backdrop = document.createElement('div');
+  backdrop.className='modal-backdrop'; backdrop.style.cssText='display:flex;z-index:9000;';
+  backdrop.innerHTML=`<div class="modal" style="max-width:420px;">
+    <div class="modal-title">Reclassificar Automaticamente</div>
+    <p style="color:var(--text-muted);font-size:13px;margin-bottom:16px;">Isso vai tentar detectar a categoria pela descrição de cada lançamento <strong style="color:var(--text)">sem categoria válida</strong>. Lançamentos já categorizados corretamente não serão alterados.</p>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="this.closest('.modal-backdrop').remove()">Cancelar</button>
+      <button class="btn btn-primary" onclick="this.closest('.modal-backdrop').remove();executarReclassificacao()">Reclassificar</button>
+    </div>
+  </div>`;
+  document.body.appendChild(backdrop);
+}
+
+function restaurarCategoriasDeBackup(input) {
+  const file = input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const backup = JSON.parse(e.target.result);
+      const backupRealizados = backup.state?.realizados || backup.realizados || [];
+      if(!backupRealizados.length){ toast('Nenhum realizado encontrado no backup.','warning'); return; }
+
+      // Build lookup key: tipo|empresa|desc|data|valor(2 decimais)
+      const chave = r => `${r.tipo}|${r.empresa}|${(r.desc||'').trim()}|${r.data}|${parseFloat(r.valor).toFixed(2)}`;
+      const backupMap = {};
+      backupRealizados.forEach(r=>{ backupMap[chave(r)] = r; });
+
+      let restaurados = 0, naoEncontrados = 0;
+      STATE.realizados.forEach(r=>{
+        const match = backupMap[chave(r)];
+        if(match && match.categoria) {
+          r.categoria = match.categoria;
+          if(match.subcat) r.subcat = match.subcat;
+          restaurados++;
+        } else {
+          naoEncontrados++;
+        }
+      });
+
+      saveToStorage();
+      renderRealizados();
+      input.value = '';
+      toast(`${restaurados} categoria(s) restaurada(s) do backup. ${naoEncontrados} sem correspondência.`, restaurados>0?'success':'warning', 6000);
+    } catch(err) {
+      toast('Erro ao ler backup: '+err.message,'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function executarReclassificacao() {
+  let count = 0;
+  STATE.realizados.forEach(r=>{
+    const tipoDetect = r.tipo==='pago' ? 'despesa' : 'receita';
+    const cats = r.tipo==='pago' ? CATS_DESPESA : CATS_RECEITA;
+    const catValida = r.categoria && cats.find(c=>c.id===r.categoria);
+    if(!catValida) {
+      r.categoria = detectarCategoria(tipoDetect, (r.desc||'')+' '+(r.nome||''));
+      if(r.tipo==='pago' && r.empresa==='Comércio' && !r.subcat) {
+        r.subcat = detectarSubcat((r.desc||'')+' '+(r.nome||''), r.empresa);
+      }
+      count++;
+    }
+  });
+  saveToStorage();
+  renderRealizados();
+  toast(`${count} lançamento(s) reclassificado(s) automaticamente. Revise e ajuste o que for necessário.`,'success',5000);
 }
 
 function excluirRealizado(id) {
@@ -4819,6 +4942,15 @@ async function sbEnroll2FA(token) {
 }
 
 // Keyboard shortcuts
+// ── Proteção global: modais NUNCA fecham ao clicar fora ──
+// Só fecham pelo botão explícito (Cancelar/Fechar/X)
+document.addEventListener('click', e=>{
+  if(e.target.classList && e.target.classList.contains('modal-backdrop') && e.target.id !== 'search-modal-backdrop'){
+    e.stopPropagation();
+    e.preventDefault();
+  }
+}, true);
+
 document.addEventListener('keydown', e=>{
   if((e.ctrlKey||e.metaKey)&&e.key==='k'){ e.preventDefault(); abrirSearch(); }
   if(e.key==='Escape') fecharSearch();
