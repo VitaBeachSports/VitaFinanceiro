@@ -152,6 +152,19 @@
   .drop-zone small{color:var(--text-dim);font-size:11px;}
 
   /* Source tabs inside import modal */
+  .cat-dropdown-wrap { position:relative; }
+  .cat-dropdown-trigger { display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none; }
+  .cat-dropdown-trigger .cat-dropdown-label { overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text); }
+  .cat-dropdown-trigger .cat-dropdown-arrow { color:var(--text-muted);font-size:10px;margin-left:8px;flex-shrink:0; }
+  .cat-dropdown-panel { position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:300;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);max-height:320px;display:flex;flex-direction:column;box-shadow:0 10px 30px rgba(0,0,0,.5);overflow:hidden; }
+  .cat-dropdown-search { padding:8px;border-bottom:1px solid var(--border);flex-shrink:0; }
+  .cat-dropdown-search input { width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:6px 8px;color:var(--text);font-size:12px;outline:none;box-sizing:border-box; }
+  .cat-dropdown-list { overflow-y:auto;padding:4px 0; }
+  .cat-dropdown-group { padding:8px 12px 3px;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em; }
+  .cat-dropdown-item { padding:6px 16px;font-size:12px;cursor:pointer;color:var(--text); }
+  .cat-dropdown-item:hover { background:var(--surface2); }
+  .cat-dropdown-item.selected { background:var(--loc-dim);color:var(--loc);font-weight:600; }
+  .cat-dropdown-empty { padding:16px;text-align:center;color:var(--text-muted);font-size:12px; }
   .src-tabs{display:flex;gap:0;margin-bottom:16px;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;}
   .src-tab{flex:1;padding:8px;text-align:center;font-size:12px;font-weight:500;cursor:pointer;color:var(--text-muted);background:var(--surface2);transition:background .15s,color .15s;}
   .src-tab.active{background:var(--loc);color:#fff;}
@@ -348,7 +361,7 @@
     </div>
     <div class="topbar-right">
       <span id="autosave-badge">✓ Salvo</span>
-      <span style="font-size:9px;color:var(--text-dim);" title="Versão do código carregado">v20260820-1940</span>
+      <span style="font-size:9px;color:var(--text-dim);" title="Versão do código carregado">v20260820-2216</span>
       <span id="sb-status" title="Status Supabase" style="font-size:11px;padding:3px 8px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);">⬤ —</span>
       <button class="btn btn-ghost btn-sm" onclick="abrirSearch()" title="Busca rápida (Ctrl+K)">
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -2621,6 +2634,7 @@ function exibirPreview(rows) {
     }
   });
 
+  limparDropdownsCategoriaLinha('import-cat-');
   document.getElementById('import-count-label').textContent = `${rows.length} lançamento(s) encontrado(s) — revise e confirme:`;
 
   const empOptions = [...EMPRESAS,'—'].map(e=>`<option value="${e}">${e}</option>`).join('');
@@ -2669,8 +2683,11 @@ function exibirPreview(rows) {
   });
   document.querySelectorAll('.import-categoria-select').forEach(sel=>{
     const idx = parseInt(sel.dataset.idx);
+    sel.id = 'import-cat-' + idx;
     sel.value = rows[idx].categoria;
+    enhanceCategorySelect(sel);
   });
+  enhanceCategorySelect('import-bulk-cat');
 
   document.getElementById('import-step1').style.display='none';
   document.getElementById('import-step2').style.display='';
@@ -2679,8 +2696,8 @@ function exibirPreview(rows) {
 function aplicarEmTodosImport() {
   const emp = document.getElementById('import-bulk-emp')?.value;
   const cat = document.getElementById('import-bulk-cat')?.value;
-  if(emp) document.querySelectorAll('.import-empresa-select').forEach(sel=>{ sel.value=emp; });
-  if(cat) document.querySelectorAll('.import-categoria-select').forEach(sel=>{ sel.value=cat; });
+  if(emp) document.querySelectorAll('.import-empresa-select').forEach(sel=>{ sel.value=emp; sel.dispatchEvent(new Event('change',{bubbles:true})); });
+  if(cat) document.querySelectorAll('.import-categoria-select').forEach(sel=>{ sel.value=cat; sel.dispatchEvent(new Event('change',{bubbles:true})); });
 }
 
 function confirmarImport() {
@@ -3868,6 +3885,147 @@ function getCatLabel(tipo, catId) {
   return cat ? `${cat.grupo} > ${cat.label}` : '—';
 }
 
+// Filtra as <option> de um <select> conforme o texto digitado (busca dentro da categoria)
+function filtrarOpcoesSelect(selectEl, termo) {
+  if(!selectEl) return;
+  const t = (termo||'').trim().toLowerCase();
+  const options = selectEl.querySelectorAll('option');
+  options.forEach(opt=>{
+    if(!opt.value || opt.value === selectEl.value) { opt.style.display=''; return; } // mantém placeholder e item selecionado sempre visíveis
+    const texto = (opt.textContent||'').toLowerCase();
+    const grupoTexto = (opt.parentElement && opt.parentElement.tagName==='OPTGROUP') ? (opt.parentElement.label||'').toLowerCase() : '';
+    const match = !t || texto.includes(t) || grupoTexto.includes(t);
+    opt.style.display = match ? '' : 'none';
+  });
+  selectEl.querySelectorAll('optgroup').forEach(og=>{
+    const algumaVisivel = [...og.querySelectorAll('option')].some(o=>o.style.display!=='none');
+    og.style.display = algumaVisivel ? '' : 'none';
+  });
+}
+
+// ── Dropdown de categoria customizado com busca embutida ──
+function enhanceCategorySelect(selectRef) {
+  const sel = typeof selectRef === 'string' ? document.getElementById(selectRef) : selectRef;
+  if(!sel || sel.dataset.enhanced) return;
+  sel.dataset.enhanced = '1';
+  if(!sel.id) sel.id = 'catsel-' + Math.random().toString(36).slice(2);
+  sel.style.display = 'none';
+
+  const wrap = document.createElement('div');
+  wrap.className = 'cat-dropdown-wrap';
+  sel.parentNode.insertBefore(wrap, sel);
+  wrap.appendChild(sel);
+
+  const trigger = document.createElement('div');
+  trigger.className = 'form-select cat-dropdown-trigger';
+  trigger.innerHTML = `<span class="cat-dropdown-label">— Selecione —</span><span class="cat-dropdown-arrow">▾</span>`;
+  wrap.insertBefore(trigger, sel);
+
+  // Painel é anexado ao <body> (não ao container local) para nunca ser cortado
+  // por tabelas ou modais com overflow/scroll, e usa posição fixa calculada na hora de abrir.
+  const panel = document.createElement('div');
+  panel.className = 'cat-dropdown-panel';
+  panel.style.display = 'none';
+  panel.style.position = 'fixed';
+  panel.dataset.forSelect = sel.id;
+  panel.innerHTML = `
+    <div class="cat-dropdown-search"><input type="text" placeholder="🔎 Pesquisar categoria..."></div>
+    <div class="cat-dropdown-list"></div>`;
+  document.body.appendChild(panel);
+
+  function posicionarPanel() {
+    const rect = trigger.getBoundingClientRect();
+    const alturaDisponivel = window.innerHeight - rect.bottom - 10;
+    panel.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - rect.width - 8)) + 'px';
+    panel.style.width = Math.max(rect.width, 200) + 'px';
+    if(alturaDisponivel < 200 && rect.top > alturaDisponivel) {
+      // Abre para cima se não houver espaço suficiente embaixo
+      panel.style.top = '';
+      panel.style.bottom = (window.innerHeight - rect.top + 4) + 'px';
+      panel.style.maxHeight = Math.min(320, rect.top - 10) + 'px';
+    } else {
+      panel.style.bottom = '';
+      panel.style.top = (rect.bottom + 4) + 'px';
+      panel.style.maxHeight = Math.min(320, alturaDisponivel) + 'px';
+    }
+  }
+
+  function atualizarLabel() {
+    const opt = sel.options[sel.selectedIndex];
+    trigger.querySelector('.cat-dropdown-label').textContent = (opt && opt.value) ? opt.textContent : '— Selecione —';
+  }
+
+  function renderLista(termo) {
+    const t = (termo||'').trim().toLowerCase();
+    const listEl = panel.querySelector('.cat-dropdown-list');
+    listEl.innerHTML = '';
+    const groups = sel.querySelectorAll('optgroup');
+    let algumItem = false;
+    groups.forEach(g=>{
+      const itens = [...g.querySelectorAll('option')].filter(o=>{
+        const texto = (o.textContent||'').toLowerCase();
+        const grupoTexto = (g.label||'').toLowerCase();
+        return !t || texto.includes(t) || grupoTexto.includes(t);
+      });
+      if(!itens.length) return;
+      algumItem = true;
+      const gEl = document.createElement('div');
+      gEl.className = 'cat-dropdown-group';
+      gEl.textContent = g.label;
+      listEl.appendChild(gEl);
+      itens.forEach(o=>{
+        const iEl = document.createElement('div');
+        iEl.className = 'cat-dropdown-item' + (o.value===sel.value?' selected':'');
+        iEl.textContent = o.textContent;
+        iEl.onclick = (e)=>{
+          e.stopPropagation();
+          sel.value = o.value;
+          sel.dispatchEvent(new Event('change', {bubbles:true}));
+          atualizarLabel();
+          panel.style.display = 'none';
+        };
+        listEl.appendChild(iEl);
+      });
+    });
+    if(!algumItem) listEl.innerHTML = '<div class="cat-dropdown-empty">Nenhuma categoria encontrada</div>';
+  }
+
+  trigger.onclick = (e)=>{
+    e.stopPropagation();
+    const abrindo = panel.style.display === 'none';
+    document.querySelectorAll('.cat-dropdown-panel').forEach(p=>{ if(p!==panel) p.style.display='none'; });
+    if(abrindo) {
+      posicionarPanel();
+      panel.style.display = '';
+      const input = panel.querySelector('input');
+      input.value = '';
+      renderLista('');
+      setTimeout(()=>input.focus(), 10);
+    } else {
+      panel.style.display = 'none';
+    }
+  };
+
+  panel.querySelector('input').addEventListener('input', function(){ renderLista(this.value); });
+  panel.addEventListener('click', e=>e.stopPropagation());
+  document.addEventListener('click', ()=>{ panel.style.display='none'; });
+  window.addEventListener('resize', ()=>{ if(panel.style.display!=='none') posicionarPanel(); });
+  window.addEventListener('scroll', ()=>{ if(panel.style.display!=='none') posicionarPanel(); }, true);
+  sel.addEventListener('change', atualizarLabel); // mantém rótulo sincronizado se o valor for setado via código (ex: "Aplicar em todos")
+
+  atualizarLabel();
+  // Atualiza o rótulo automaticamente se o select for repopulado (ex: buildCatOptions)
+  new MutationObserver(atualizarLabel).observe(sel, {childList:true, subtree:true});
+}
+
+// Remove painéis "órfãos" de linhas dinâmicas anteriores (import/reclassificação),
+// evitando que fiquem acumulando no <body> a cada nova importação
+function limparDropdownsCategoriaLinha(prefixo) {
+  document.querySelectorAll('.cat-dropdown-panel').forEach(p=>{
+    if(p.dataset.forSelect && p.dataset.forSelect.startsWith(prefixo)) p.remove();
+  });
+}
+
 function buildCatOptions(tipo, selectedId) {
   const cats = tipo === 'receita' ? CATS_RECEITA : CATS_DESPESA;
   // Group by grupo
@@ -4455,6 +4613,7 @@ function parsearRealizados(texto) {
 }
 
 function exibirPreviewRealizado(rows) {
+  limparDropdownsCategoriaLinha('realizado-cat-');
   // Apply empresa predefinida
   const empPredefinida = document.getElementById('import-realizado-empresa')?.value || 'auto';
   if(empPredefinida !== 'auto') rows.forEach(r => r.empresa = empPredefinida);
@@ -4511,6 +4670,12 @@ function exibirPreviewRealizado(rows) {
   document.querySelectorAll('.realizado-emp-sel').forEach(sel=>{
     const idx=parseInt(sel.dataset.idx); sel.value=rows[idx].empresa;
   });
+  document.querySelectorAll('.realizado-cat-sel').forEach(sel=>{
+    const idx=parseInt(sel.dataset.idx);
+    sel.id = 'realizado-cat-' + idx;
+    enhanceCategorySelect(sel);
+  });
+  enhanceCategorySelect('bulk-cat-all');
   document.getElementById('import-realizado-step1').style.display='none';
   document.getElementById('import-realizado-step2').style.display='';
 }
@@ -4532,8 +4697,8 @@ function aplicarEmTodos() {
   const emp    = document.getElementById('bulk-emp-all')?.value;
   const cat    = document.getElementById('bulk-cat-all')?.value;
   const subcat = document.getElementById('bulk-subcat-all')?.value;
-  if(emp) document.querySelectorAll('.realizado-emp-sel').forEach(sel=>{ sel.value=emp; });
-  if(cat) document.querySelectorAll('.realizado-cat-sel').forEach(sel=>{ sel.value=cat; });
+  if(emp) document.querySelectorAll('.realizado-emp-sel').forEach(sel=>{ sel.value=emp; sel.dispatchEvent(new Event('change',{bubbles:true})); });
+  if(cat) document.querySelectorAll('.realizado-cat-sel').forEach(sel=>{ sel.value=cat; sel.dispatchEvent(new Event('change',{bubbles:true})); });
   if(subcat) document.querySelectorAll('.realizado-subcat-sel').forEach(sel=>{ sel.value=subcat; });
 }
 
@@ -5425,6 +5590,7 @@ window.addEventListener('load', ()=>{
   aplicarTema();
   aplicarFonte();
   carregarCatsCustom();
+  ['pagar-categoria','receber-categoria','rm-categoria','real-f-categoria','pagar-f-categoria','receb-f-categoria'].forEach(enhanceCategorySelect);
   init();
 });
 
