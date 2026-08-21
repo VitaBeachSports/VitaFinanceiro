@@ -102,6 +102,7 @@
   .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;}
   .modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);width:100%;max-width:520px;max-height:90vh;overflow-y:auto;padding:24px;}
   .modal-lg{max-width:740px;}
+  .modal-xl{max-width:min(1400px, 95vw);}
   .modal-title{font-size:16px;font-weight:600;margin-bottom:20px;}
   .modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;}
   .chip-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;}
@@ -361,7 +362,7 @@
     </div>
     <div class="topbar-right">
       <span id="autosave-badge">✓ Salvo</span>
-      <span style="font-size:9px;color:var(--text-dim);" title="Versão do código carregado">v20260820-2216</span>
+      <span style="font-size:9px;color:var(--text-dim);" title="Versão do código carregado">v20260821-2137</span>
       <span id="sb-status" title="Status Supabase" style="font-size:11px;padding:3px 8px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);">⬤ —</span>
       <button class="btn btn-ghost btn-sm" onclick="abrirSearch()" title="Busca rápida (Ctrl+K)">
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -911,7 +912,7 @@
 
 <!-- Modal Importar -->
 <div class="modal-backdrop" id="modal-import" style="display:none;">
-  <div class="modal modal-lg">
+  <div class="modal modal-xl">
     <div class="modal-title" id="modal-import-title">Importar Lançamentos</div>
 
     <!-- Source tabs -->
@@ -1001,7 +1002,7 @@
 
 <!-- Modal Import Realizados -->
 <div class="modal-backdrop" id="modal-import-realizado" style="display:none;">
-  <div class="modal modal-lg">
+  <div class="modal modal-xl">
     <div class="modal-title" id="modal-import-realizado-title">Importar Realizados</div>
     <div id="import-realizado-step1">
       <div class="form-group mb-3">
