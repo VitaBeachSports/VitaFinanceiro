@@ -362,7 +362,7 @@
     </div>
     <div class="topbar-right">
       <span id="autosave-badge">✓ Salvo</span>
-      <span style="font-size:9px;color:var(--text-dim);" title="Versão do código carregado">v20260821-2137</span>
+      <span style="font-size:9px;color:var(--text-dim);" title="Versão do código carregado">v20260825-2209</span>
       <span id="sb-status" title="Status Supabase" style="font-size:11px;padding:3px 8px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);">⬤ —</span>
       <button class="btn btn-ghost btn-sm" onclick="abrirSearch()" title="Busca rápida (Ctrl+K)">
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -1301,11 +1301,26 @@ async function sbFetchComRetry(url, options) {
 }
 
 async function sbGetAll(table) {
-  const res = await sbFetchComRetry(`${SB_URL}/rest/v1/${table}?user_id=eq.${AUTH.userId}&select=*&order=created_at.asc`, {
-    headers: {'apikey': SB_KEY, 'Authorization': `Bearer ${AUTH.session}`}
-  });
-  if(!res.ok) return [];
-  return res.json();
+  const PAGE_SIZE = 1000;
+  let todos = [];
+  let offset = 0;
+  while(true) {
+    const res = await sbFetchComRetry(`${SB_URL}/rest/v1/${table}?user_id=eq.${AUTH.userId}&select=*&order=created_at.asc`, {
+      headers: {
+        'apikey': SB_KEY,
+        'Authorization': `Bearer ${AUTH.session}`,
+        'Range-Unit': 'items',
+        'Range': `${offset}-${offset+PAGE_SIZE-1}`
+      }
+    });
+    if(!res.ok) { console.error(`[sbGetAll] Falha ao buscar ${table}:`, res.status); break; }
+    const pagina = await res.json();
+    todos = todos.concat(pagina);
+    console.log(`[sbGetAll] ${table}: página com ${pagina.length} registro(s) (total até agora: ${todos.length})`);
+    if(pagina.length < PAGE_SIZE) break; // última página
+    offset += PAGE_SIZE;
+  }
+  return todos;
 }
 
 async function sbUpsert(table, rows) {
