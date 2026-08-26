@@ -362,7 +362,7 @@
     </div>
     <div class="topbar-right">
       <span id="autosave-badge">✓ Salvo</span>
-      <span style="font-size:9px;color:var(--text-dim);" title="Versão do código carregado">v20260825-2209</span>
+      <span style="font-size:9px;color:var(--text-dim);" title="Versão do código carregado">v20260826-1521</span>
       <span id="sb-status" title="Status Supabase" style="font-size:11px;padding:3px 8px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);">⬤ —</span>
       <button class="btn btn-ghost btn-sm" onclick="abrirSearch()" title="Busca rápida (Ctrl+K)">
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -1342,6 +1342,24 @@ async function sbUpsert(table, rows) {
       const errText = await res.text();
       console.error(`sbUpsert error em ${table} (lote ${i}-${i+batch.length}):`, errText);
       throw new Error(`Falha ao salvar em "${table}": ${errText.slice(0,200)}`);
+    }
+  }
+}
+
+async function sbDeleteMany(table, ids) {
+  if(!ids || !ids.length) return;
+  const CHUNK = 100; // evita URLs gigantes e não sobrecarrega o pool de conexões
+  for(let i=0; i<ids.length; i+=CHUNK) {
+    const chunk = ids.slice(i, i+CHUNK);
+    const filtro = chunk.map(id=>`"${String(id).replace(/"/g,'')}"`).join(',');
+    try {
+      await sbFetchComRetry(`${SB_URL}/rest/v1/${table}?id=in.(${filtro})`, {
+        method: 'DELETE',
+        headers: {'apikey': SB_KEY, 'Authorization': `Bearer ${AUTH.session}`}
+      });
+    } catch(e) {
+      console.error(`[sbDeleteMany] erro ao excluir lote em ${table}:`, e);
+      throw e;
     }
   }
 }
@@ -2341,8 +2359,10 @@ function excluirSelecionados(tipo){
   if(tipo==='pagar') renderPagar(); else renderReceber();
   if(AUTH.session) {
     const tabela = tipo==='pagar' ? 'vita_pagar' : 'vita_receber';
-    Promise.all(ids.map(id=>sbDelete(tabela, id)))
-      .catch(e=>{console.error('Erro ao excluir selecionados no Supabase:',e); toast('⚠ Excluído localmente, mas houve falha ao remover do servidor.','warning');});
+    atualizarStatusConexao('syncing');
+    sbDeleteMany(tabela, ids)
+      .then(()=>atualizarStatusConexao('online'))
+      .catch(e=>{console.error('Erro ao excluir selecionados no Supabase:',e); toast('⚠ Excluído localmente, mas houve falha ao remover do servidor.','warning'); atualizarStatusConexao('offline');});
   }
 }
 function abrirModalPagar(id){
@@ -2897,12 +2917,21 @@ function confirmarFechamento(){
     lancamentos:{pagar:lancPagar,receber:lancReceber},
     ts:new Date().toISOString()
   };
+  const idsRealizadosArquivados = temReal ? [...realPago, ...realRec].map(r=>r.id) : [];
   if(temReal) STATE.realizados=STATE.realizados.filter(r=>r.data<iniMes||r.data>fimMes);
   STATE.pagar=STATE.pagar.filter(p=>p.data<iniMes||p.data>fimMes);
   STATE.receber=STATE.receber.filter(r=>r.data<iniMes||r.data>fimMes);
   saveFechamentos();saveToStorage();fecharModal('modal-fechar-mes');
   toast(`Mês ${mesNome(key)} fechado com sucesso!`,'success');
   renderHistorico();goToPage('historico');
+  // Remove do Supabase os realizados que foram arquivados dentro do fechamento
+  // (senão eles ficam "órfãos" na tabela vita_realizados para sempre)
+  if(AUTH.session && idsRealizadosArquivados.length) {
+    sbDeleteMany('vita_realizados', idsRealizadosArquivados).catch(e=>{
+      console.error('Erro ao limpar realizados arquivados no Supabase:',e);
+      toast('⚠ Mês fechado, mas houve falha ao limpar os realizados arquivados no servidor.','warning');
+    });
+  }
 }
 
 // ════════════════════════════════════════
@@ -2933,6 +2962,7 @@ function excluirFechamento(key){
   delete STATE.fechamentos[key];
   saveFechamentos();
   renderHistorico();
+  if(AUTH.session) sbDelete('vita_fechamentos', key).catch(e=>{console.error('Erro ao excluir fechamento no Supabase:',e); toast('⚠ Excluído localmente, mas falhou ao remover do servidor.','warning');});
 }
 
 function reabrirFechamento(key) {
@@ -2942,6 +2972,8 @@ function reabrirFechamento(key) {
   const temRealizados = STATE.realizados.length > 0;
 
   const confirmar = () => {
+    // Captura os ids que existiam ANTES da substituição, para poder limpá-los do Supabase depois
+    const idsAntigos = STATE.realizados.map(r=>r.id);
     // Restore lancamentos to realizados
     const novosReal = [];
     (f.lancamentos.pagar||[]).forEach(p=>novosReal.push({...p, id:uid(), tipo:'pago'}));
@@ -2954,6 +2986,13 @@ function reabrirFechamento(key) {
     toast(`Fechamento de ${mesNome(key)} reaberto! Lançamentos devolvidos aos Realizados.`,'success');
     renderHistorico();
     goToPage('realizados');
+    // Limpa do Supabase os realizados que foram substituídos (senão ficam órfãos)
+    if(AUTH.session && idsAntigos.length) {
+      sbDeleteMany('vita_realizados', idsAntigos).catch(e=>{
+        console.error('Erro ao limpar realizados substituídos no Supabase:',e);
+        toast('⚠ Mês reaberto, mas houve falha ao limpar os realizados antigos no servidor.','warning');
+      });
+    }
   };
 
   if(temRealizados) {
@@ -3359,6 +3398,16 @@ function importarBackup(input) {
     try {
       const backup = JSON.parse(e.target.result);
       if(!backup.state) throw new Error('Arquivo inválido');
+
+      // Captura os ids que existiam ANTES da substituição, para limpar órfãos do Supabase depois
+      const idsAntigos = {
+        saldos: STATE.saldos.map(r=>r.id),
+        pagar: STATE.pagar.map(r=>r.id),
+        receber: STATE.receber.map(r=>r.id),
+        realizados: STATE.realizados.map(r=>r.id),
+        estimativas: STATE.estimativas.map(r=>r.id),
+      };
+
       STATE.saldos     = backup.state.saldos||[];
       STATE.pagar      = backup.state.pagar||[];
       STATE.receber    = backup.state.receber||[];
@@ -3374,7 +3423,29 @@ function importarBackup(input) {
       if(AUTH.session) {
         toast('Sincronizando com servidor...','info',3000);
         syncToSupabase()
-          .then(()=>toast(`✓ Backup restaurado: ${STATE.realizados.length} realizados sincronizados!`,'success',6000))
+          .then(async ()=>{
+            // Limpa do Supabase os ids antigos que não existem mais na lista nova (evita órfãos)
+            const novosIds = {
+              saldos: new Set(STATE.saldos.map(r=>r.id)),
+              pagar: new Set(STATE.pagar.map(r=>r.id)),
+              receber: new Set(STATE.receber.map(r=>r.id)),
+              realizados: new Set(STATE.realizados.map(r=>r.id)),
+              estimativas: new Set(STATE.estimativas.map(r=>r.id)),
+            };
+            const orfaosSaldos      = idsAntigos.saldos.filter(id=>!novosIds.saldos.has(id));
+            const orfaosPagar       = idsAntigos.pagar.filter(id=>!novosIds.pagar.has(id));
+            const orfaosReceber     = idsAntigos.receber.filter(id=>!novosIds.receber.has(id));
+            const orfaosRealizados  = idsAntigos.realizados.filter(id=>!novosIds.realizados.has(id));
+            const orfaosEstimativas = idsAntigos.estimativas.filter(id=>!novosIds.estimativas.has(id));
+            await Promise.all([
+              sbDeleteMany('vita_saldos', orfaosSaldos),
+              sbDeleteMany('vita_pagar', orfaosPagar),
+              sbDeleteMany('vita_receber', orfaosReceber),
+              sbDeleteMany('vita_realizados', orfaosRealizados),
+              sbDeleteMany('vita_estimativas', orfaosEstimativas),
+            ]);
+            toast(`✓ Backup restaurado: ${STATE.realizados.length} realizados sincronizados!`,'success',6000);
+          })
           .catch(err=>toast(`⚠ Backup carregado localmente, mas falhou ao sincronizar com Supabase: ${err.message}`,'error',10000));
       } else {
         toast('Backup restaurado com sucesso!','success');
@@ -4928,9 +4999,11 @@ function limparRealizados() {
   if(!confirm('Limpar todos os realizados?')) return;
   const idsParaExcluir = STATE.realizados.map(r=>r.id);
   STATE.realizados=[]; saveToStorage(); renderRealizados();
-  if(AUTH.session) {
-    Promise.all(idsParaExcluir.map(id=>sbDelete('vita_realizados', id)))
-      .catch(e=>{console.error('Erro ao limpar no Supabase:',e); toast('⚠ Limpo localmente, mas houve falha ao remover do servidor.','warning');});
+  if(AUTH.session && idsParaExcluir.length) {
+    atualizarStatusConexao('syncing');
+    sbDeleteMany('vita_realizados', idsParaExcluir)
+      .then(()=>atualizarStatusConexao('online'))
+      .catch(e=>{console.error('Erro ao limpar no Supabase:',e); toast('⚠ Limpo localmente, mas houve falha ao remover do servidor.','warning'); atualizarStatusConexao('offline');});
   }
 }
 
