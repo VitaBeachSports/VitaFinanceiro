@@ -339,7 +339,7 @@
     <div class="nav-item" data-page="realizados" id="nav-realizados"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Realizados</div>
     <div class="nav-section" id="nav-config-section">Parâmetros</div>
     <div class="nav-item" data-page="seguranca" id="nav-seguranca"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Segurança / 2FA</div>
-    <div class="nav-item" data-page="configuracoes" id="nav-configuracoes"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Receitas Estimadas</div>
+    <div class="nav-item" data-page="configuracoes" id="nav-configuracoes"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Configurações</div>
   </div>
   <div class="sidebar-footer" id="sidebar-footer-admin">
     <button class="btn btn-warning" style="width:100%;justify-content:center;" onclick="abrirModalFecharMes()">
@@ -362,7 +362,7 @@
     </div>
     <div class="topbar-right">
       <span id="autosave-badge">✓ Salvo</span>
-      <span style="font-size:9px;color:var(--text-dim);" title="Versão do código carregado">v20260826-1807</span>
+      <span style="font-size:9px;color:var(--text-dim);" title="Versão do código carregado">v20260827-1755</span>
       <span id="sb-status" title="Status Supabase" style="font-size:11px;padding:3px 8px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);">⬤ —</span>
       <button class="btn btn-ghost btn-sm" onclick="abrirSearch()" title="Busca rápida (Ctrl+K)">
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -992,6 +992,14 @@
     <div class="form-group">
       <label class="form-label">Categoria</label>
       <select class="form-select" id="rm-categoria"></select>
+    </div>
+    <div class="form-group" id="rm-subcat-wrap" style="display:none;">
+      <label class="form-label">Sub-classificação (Comércio)</label>
+      <select class="form-select" id="rm-subcat">
+        <option value="">— Selecione —</option>
+        <option value="bar">Bar</option>
+        <option value="loja">Loja</option>
+      </select>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="fecharModal('modal-realizado-manual')">Cancelar</button>
@@ -2001,7 +2009,7 @@ function saveFechamentos() {
 // ════════════════════════════════════════
 // NAVIGATION
 // ════════════════════════════════════════
-const PAGE_TITLES = {dashboard:'Dashboard',fluxo:'Fluxo de Caixa',cobertura:'Cobertura de Obrigações',saldos:'Saldos Bancários',pagar:'Contas a Pagar',receber:'Contas a Receber',historico:'Fechamentos Mensais',configuracoes:'Receitas Estimadas',analises:'Análises & DRE',realizados:'Realizados','historico-caixa':'Histórico de Caixa',seguranca:'Segurança / 2FA'};
+const PAGE_TITLES = {dashboard:'Dashboard',fluxo:'Fluxo de Caixa',cobertura:'Cobertura de Obrigações',saldos:'Saldos Bancários',pagar:'Contas a Pagar',receber:'Contas a Receber',historico:'Fechamentos Mensais',configuracoes:'Configurações',analises:'Análises & DRE',realizados:'Realizados','historico-caixa':'Histórico de Caixa',seguranca:'Segurança / 2FA'};
 
 function setupNavigation() {
   document.querySelectorAll('.nav-item[data-page]').forEach(item => {
