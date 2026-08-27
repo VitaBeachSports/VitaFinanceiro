@@ -362,7 +362,7 @@
     </div>
     <div class="topbar-right">
       <span id="autosave-badge">✓ Salvo</span>
-      <span style="font-size:9px;color:var(--text-dim);" title="Versão do código carregado">v20260827-1755</span>
+      <span style="font-size:9px;color:var(--text-dim);" title="Versão do código carregado">v20260827-1931</span>
       <span id="sb-status" title="Status Supabase" style="font-size:11px;padding:3px 8px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);">⬤ —</span>
       <button class="btn btn-ghost btn-sm" onclick="abrirSearch()" title="Busca rápida (Ctrl+K)">
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -4875,14 +4875,16 @@ function renderRealizados() {
   popularFiltroCategoria('real', realizadosTipoFiltro==='pago'?'despesa':realizadosTipoFiltro==='recebido'?'receita':'ambos');
   lista = aplicarFiltrosGenericos(lista, 'real');
 
-  const totalPago = STATE.realizados.filter(r=>r.tipo==='pago').reduce((t,r)=>t+parseFloat(r.valor||0),0);
-  const totalRec  = STATE.realizados.filter(r=>r.tipo==='recebido').reduce((t,r)=>t+parseFloat(r.valor||0),0);
+  // Os totais dos cards respeitam o filtro de empresa selecionado (mas não os demais filtros de texto/data/valor)
+  const baseResumo = realizadosEmpFiltro !== 'todas' ? STATE.realizados.filter(r=>r.empresa===realizadosEmpFiltro) : STATE.realizados;
+  const totalPago = baseResumo.filter(r=>r.tipo==='pago').reduce((t,r)=>t+parseFloat(r.valor||0),0);
+  const totalRec  = baseResumo.filter(r=>r.tipo==='recebido').reduce((t,r)=>t+parseFloat(r.valor||0),0);
   const resultado = totalRec - totalPago;
 
   document.getElementById('realizados-resumo').innerHTML=`
-    <div class="stat-card positive"><div class="stat-label">Total Recebido</div><div class="stat-value text-green mono">${brl(totalRec)}</div><div class="stat-sub">${STATE.realizados.filter(r=>r.tipo==='recebido').length} lançamentos</div></div>
-    <div class="stat-card negative"><div class="stat-label">Total Pago</div><div class="stat-value text-red mono">${brl(totalPago)}</div><div class="stat-sub">${STATE.realizados.filter(r=>r.tipo==='pago').length} lançamentos</div></div>
-    <div class="stat-card ${resultado>=0?'positive':'negative'}"><div class="stat-label">Resultado</div><div class="stat-value mono ${resultado>=0?'text-green':'text-red'}">${brl(resultado)}</div></div>`;
+    <div class="stat-card positive"><div class="stat-label">Total Recebido${realizadosEmpFiltro!=='todas'?' — '+realizadosEmpFiltro:''}</div><div class="stat-value text-green mono">${brl(totalRec)}</div><div class="stat-sub">${baseResumo.filter(r=>r.tipo==='recebido').length} lançamentos</div></div>
+    <div class="stat-card negative"><div class="stat-label">Total Pago${realizadosEmpFiltro!=='todas'?' — '+realizadosEmpFiltro:''}</div><div class="stat-value text-red mono">${brl(totalPago)}</div><div class="stat-sub">${baseResumo.filter(r=>r.tipo==='pago').length} lançamentos</div></div>
+    <div class="stat-card ${resultado>=0?'positive':'negative'}"><div class="stat-label">Resultado${realizadosEmpFiltro!=='todas'?' — '+realizadosEmpFiltro:''}</div><div class="stat-value mono ${resultado>=0?'text-green':'text-red'}">${brl(resultado)}</div></div>`;
 
   const tbody = document.getElementById('realizados-tbody');
   if(!lista.length){ tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:32px;">Nenhum lançamento encontrado.</td></tr>'; return; }
