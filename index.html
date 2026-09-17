@@ -369,7 +369,7 @@
     </div>
     <div class="topbar-right">
       <span id="autosave-badge">✓ Salvo</span>
-      <span style="font-size:9px;color:var(--text-dim);" title="Versão do código carregado">v20260917-1934</span>
+      <span style="font-size:9px;color:var(--text-dim);" title="Versão do código carregado">v20260917-2010</span>
       <span id="sb-status" title="Status Supabase" style="font-size:11px;padding:3px 8px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);">⬤ —</span>
       <button class="btn btn-ghost btn-sm" onclick="abrirSearch()" title="Busca rápida (Ctrl+K)">
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -1340,7 +1340,7 @@ function aplicarPermissoesNaSidebar() {
   PAGINAS_PERMISSAO.forEach(p=>{
     const permitido = PERMS[p.key]?.ver !== false;
     const navEl = document.querySelector(`.nav-item[data-page="${p.key}"]`);
-    if(navEl && !permitido) navEl.style.display = 'none';
+    if(navEl) navEl.style.display = permitido ? '' : 'none';
   });
 }
 
@@ -1451,7 +1451,10 @@ async function sbGetAll(table) {
   while(true) {
     // cache-busting correto: via fetch option + headers, NUNCA via query param
     // (query params desconhecidos são interpretados pelo PostgREST como filtros de coluna e quebram a busca!)
-    const res = await sbFetchComRetry(`${SB_URL}/rest/v1/${table}?user_id=eq.${AUTH.userId}&select=*&order=created_at.asc`, {
+    // IMPORTANTE: não filtra por user_id — todos os usuários autenticados compartilham
+    // o mesmo conjunto de dados da empresa (não é um sistema multi-tenant por conta).
+    // Quem pode ver/editar cada página é controlado pelo sistema de PERMS, não pelo dono da linha.
+    const res = await sbFetchComRetry(`${SB_URL}/rest/v1/${table}?select=*&order=created_at.asc`, {
       cache: 'no-store',
       headers: {
         'apikey': SB_KEY,
