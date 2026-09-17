@@ -153,6 +153,12 @@
   .drop-zone small{color:var(--text-dim);font-size:11px;}
 
   /* Source tabs inside import modal */
+  .page.no-edit-permission .btn-primary,
+  .page.no-edit-permission .btn-danger,
+  .page.no-edit-permission .btn-warning,
+  .page.no-edit-permission input[type="checkbox"].sel-pagar,
+  .page.no-edit-permission input[type="checkbox"].sel-receber,
+  .page.no-edit-permission .realizado-row button.btn-danger { pointer-events:none !important; opacity:.35 !important; }
   .cat-dropdown-wrap { position:relative; }
   .cat-dropdown-trigger { display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none; }
   .cat-dropdown-trigger .cat-dropdown-label { overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text); }
@@ -362,7 +368,7 @@
     </div>
     <div class="topbar-right">
       <span id="autosave-badge">✓ Salvo</span>
-      <span style="font-size:9px;color:var(--text-dim);" title="Versão do código carregado">v20260827-1931</span>
+      <span style="font-size:9px;color:var(--text-dim);" title="Versão do código carregado">v20260917-1213</span>
       <span id="sb-status" title="Status Supabase" style="font-size:11px;padding:3px 8px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);">⬤ —</span>
       <button class="btn btn-ghost btn-sm" onclick="abrirSearch()" title="Busca rápida (Ctrl+K)">
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -1181,6 +1187,23 @@ let STATE = { saldos:[], pagar:[], receber:[], fechamentos:{}, estimativas:[], r
 
 // ── Auth state ───────────────────────────────────────────
 let AUTH = { session: null, refreshToken: null, perfil: null, email: null, mfaFactorId: null, userId: null };
+const MASTER_EMAIL = 'gestao@vitabeachsports.com'; // único que pode gerenciar usuários e permissões
+let PERMS = {}; // { pagina: {ver:bool, editar:bool} } do usuário logado
+const PAGINAS_PERMISSAO = [
+  {key:'dashboard', label:'Dashboard'},
+  {key:'fluxo', label:'Fluxo de Caixa'},
+  {key:'cobertura', label:'Cobertura'},
+  {key:'saldos', label:'Saldos Bancários'},
+  {key:'pagar', label:'Contas a Pagar'},
+  {key:'receber', label:'Contas a Receber'},
+  {key:'historico', label:'Fechamentos Mensais'},
+  {key:'realizados', label:'Realizados'},
+  {key:'analises', label:'Análises & DRE'},
+  {key:'comparativo', label:'Comparativo'},
+  {key:'previsao', label:'Previsão'},
+  {key:'historico-caixa', label:'Histórico de Caixa'},
+  {key:'configuracoes', label:'Configurações'},
+];
 let AMBIENTE_REAL = true; // true = dados reais, false = dados de teste
 
 // ── Supabase config ──────────────────────────────────────────────
@@ -1255,6 +1278,99 @@ async function sbRefreshToken() {
 
 // Renova o token proativamente a cada 45 minutos (antes de expirar em 60min)
 setInterval(()=>{ if(AUTH.session) sbRefreshToken(); }, 45*60*1000);
+
+// ── Permissões de usuário ─────────────────────────────
+async function carregarPermissoes(email) {
+  if(email === MASTER_EMAIL) {
+    // Master tem acesso total a tudo, sempre
+    const tudo = {};
+    PAGINAS_PERMISSAO.forEach(p=>{ tudo[p.key] = {ver:true, editar:true}; });
+    return tudo;
+  }
+  try {
+    const res = await sbFetchComRetry(`${SB_URL}/rest/v1/vita_permissoes?email=eq.${encodeURIComponent(email)}&select=*`, {
+      cache: 'no-store',
+      headers: {'apikey': SB_KEY, 'Authorization': `Bearer ${AUTH.session}`}
+    });
+    const linhas = res.ok ? await res.json() : [];
+    const mapa = {};
+    PAGINAS_PERMISSAO.forEach(p=>{ mapa[p.key] = {ver:true, editar:true}; }); // padrão liberado até ser configurado
+    linhas.forEach(l=>{ mapa[l.pagina] = {ver: !!l.pode_ver, editar: !!l.pode_editar}; });
+    return mapa;
+  } catch(e) {
+    console.error('[permissoes] erro ao carregar:', e);
+    const tudo = {};
+    PAGINAS_PERMISSAO.forEach(p=>{ tudo[p.key] = {ver:true, editar:true}; });
+    return tudo;
+  }
+}
+
+async function salvarPermissoesUsuario(email, permissoesPorPagina) {
+  const rows = PAGINAS_PERMISSAO.map(p=>({
+    id: `${email}__${p.key}`,
+    email,
+    pagina: p.key,
+    pode_ver: !!permissoesPorPagina[p.key]?.ver,
+    pode_editar: !!permissoesPorPagina[p.key]?.editar,
+  }));
+  await sbUpsert('vita_permissoes', rows);
+}
+
+function aplicarPermissoesNaSidebar() {
+  PAGINAS_PERMISSAO.forEach(p=>{
+    const permitido = PERMS[p.key]?.ver !== false;
+    const navEl = document.querySelector(`.nav-item[data-page="${p.key}"]`);
+    if(navEl && !permitido) navEl.style.display = 'none';
+  });
+}
+
+// ── Página Usuários e Permissões (só master) ──────────
+let _permissoesEmEdicao = {};
+
+function renderUsuariosPermissoesPage() {
+  document.getElementById('up-email').value = '';
+  document.getElementById('up-tabela-wrap').style.display = 'none';
+}
+
+async function carregarPermissoesParaEdicao() {
+  const email = document.getElementById('up-email').value.trim().toLowerCase();
+  if(!email || !email.includes('@')) { toast('Digite um e-mail válido.','warning'); return; }
+  if(email === MASTER_EMAIL) { toast('Este e-mail é o administrador master e já tem acesso total.','info'); return; }
+
+  _permissoesEmEdicao = await carregarPermissoes(email);
+
+  const corpo = document.getElementById('up-tabela-corpo');
+  corpo.innerHTML = PAGINAS_PERMISSAO.map(p=>`
+    <tr>
+      <td>${p.label}</td>
+      <td style="text-align:center;"><input type="checkbox" data-pagina="${p.key}" data-campo="ver" ${_permissoesEmEdicao[p.key].ver?'checked':''} style="width:16px;height:16px;accent-color:var(--loc);cursor:pointer;" onchange="onTogglePermissao(this)"></td>
+      <td style="text-align:center;"><input type="checkbox" data-pagina="${p.key}" data-campo="editar" ${_permissoesEmEdicao[p.key].editar?'checked':''} style="width:16px;height:16px;accent-color:var(--loc);cursor:pointer;" onchange="onTogglePermissao(this)"></td>
+    </tr>`).join('');
+  document.getElementById('up-tabela-wrap').style.display = '';
+}
+
+function onTogglePermissao(checkbox) {
+  const pagina = checkbox.dataset.pagina;
+  const campo = checkbox.dataset.campo;
+  _permissoesEmEdicao[pagina][campo] = checkbox.checked;
+  // Se tirar "ver", automaticamente tira "editar" também (não faz sentido editar o que não vê)
+  if(campo==='ver' && !checkbox.checked) {
+    _permissoesEmEdicao[pagina].editar = false;
+    const editarCb = document.querySelector(`input[data-pagina="${pagina}"][data-campo="editar"]`);
+    if(editarCb) editarCb.checked = false;
+  }
+}
+
+async function salvarPermissoesForm() {
+  const email = document.getElementById('up-email').value.trim().toLowerCase();
+  if(!email) return;
+  try {
+    await salvarPermissoesUsuario(email, _permissoesEmEdicao);
+    toast(`Permissões de ${email} salvas com sucesso!`,'success');
+  } catch(e) {
+    toast('Erro ao salvar permissões: '+e.message,'error');
+  }
+}
 
 async function sbListarFactors(token) {
   if(!token) { console.warn('[2FA DEBUG] sbListarFactors: no token'); return []; }
@@ -1692,6 +1808,12 @@ async function finalizarLogin(token, email) {
     AUTH.userId = userData.id;
   } catch(e) { AUTH.userId = email; }
   AUTH.perfil = await sbObterPerfil(email, token);
+  AUTH.email = email;
+  PERMS = await carregarPermissoes(email);
+  aplicarPermissoesNaSidebar();
+  // Mostra o item "Usuários e Permissões" só para o master
+  const navUsuarios = document.getElementById('nav-usuarios-permissoes');
+  if(navUsuarios) navUsuarios.style.display = (email === MASTER_EMAIL) ? '' : 'none';
   // Restrict colaborador: hide some nav items
   if(AUTH.perfil === 'colaborador') {
     document.getElementById('nav-config-section').style.display='none';
@@ -2009,7 +2131,7 @@ function saveFechamentos() {
 // ════════════════════════════════════════
 // NAVIGATION
 // ════════════════════════════════════════
-const PAGE_TITLES = {dashboard:'Dashboard',fluxo:'Fluxo de Caixa',cobertura:'Cobertura de Obrigações',saldos:'Saldos Bancários',pagar:'Contas a Pagar',receber:'Contas a Receber',historico:'Fechamentos Mensais',configuracoes:'Configurações',analises:'Análises & DRE',realizados:'Realizados','historico-caixa':'Histórico de Caixa',seguranca:'Segurança / 2FA'};
+const PAGE_TITLES = {dashboard:'Dashboard',fluxo:'Fluxo de Caixa',cobertura:'Cobertura de Obrigações',saldos:'Saldos Bancários',pagar:'Contas a Pagar',receber:'Contas a Receber',historico:'Fechamentos Mensais',configuracoes:'Configurações',analises:'Análises & DRE',realizados:'Realizados','historico-caixa':'Histórico de Caixa',seguranca:'Segurança / 2FA','usuarios-permissoes':'Usuários e Permissões'};
 
 function setupNavigation() {
   document.querySelectorAll('.nav-item[data-page]').forEach(item => {
@@ -2021,11 +2143,18 @@ function setupNavigation() {
 }
 
 function goToPage(page) {
+  if(PERMS[page]?.ver === false) {
+    toast('Você não tem permissão para acessar esta página.','warning');
+    return;
+  }
   document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
   document.querySelector(`.nav-item[data-page="${page}"]`)?.classList.add('active');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById(`page-${page}`).classList.add('active');
-  document.getElementById('topbar-title').textContent = PAGE_TITLES[page];
+  const pageEl = document.getElementById(`page-${page}`);
+  pageEl.classList.add('active');
+  // Bloqueia ações de edição/exclusão/criação se o usuário só tiver permissão de visualização
+  pageEl.classList.toggle('no-edit-permission', PERMS[page]?.editar === false);
+  document.getElementById('topbar-title').textContent = PAGE_TITLES[page] || page;
   renderPage(page);
 }
 
@@ -2045,6 +2174,7 @@ function renderPage(p) {
   else if(p==='comparativo') renderComparativoPage();
   else if(p==='previsao') renderPrevisaoPage();
   else if(p==='seguranca') renderSegurancaPage();
+  else if(p==='usuarios-permissoes') renderUsuariosPermissoesPage();
 }
 function renderAll() { renderDashboard(); }
 
