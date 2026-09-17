@@ -344,6 +344,7 @@
     <div class="nav-item" data-page="historico-caixa" id="nav-historico-caixa"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Histórico de Caixa</div>
     <div class="nav-item" data-page="realizados" id="nav-realizados"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Realizados</div>
     <div class="nav-section" id="nav-config-section">Parâmetros</div>
+    <div class="nav-item" data-page="usuarios-permissoes" id="nav-usuarios-permissoes" style="display:none;"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Usuários e Permissões</div>
     <div class="nav-item" data-page="seguranca" id="nav-seguranca"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Segurança / 2FA</div>
     <div class="nav-item" data-page="configuracoes" id="nav-configuracoes"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Configurações</div>
   </div>
@@ -368,7 +369,7 @@
     </div>
     <div class="topbar-right">
       <span id="autosave-badge">✓ Salvo</span>
-      <span style="font-size:9px;color:var(--text-dim);" title="Versão do código carregado">v20260917-1213</span>
+      <span style="font-size:9px;color:var(--text-dim);" title="Versão do código carregado">v20260917-1934</span>
       <span id="sb-status" title="Status Supabase" style="font-size:11px;padding:3px 8px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);">⬤ —</span>
       <button class="btn btn-ghost btn-sm" onclick="abrirSearch()" title="Busca rápida (Ctrl+K)">
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -745,6 +746,25 @@
     </div>
 
     <!-- SEGURANÇA / 2FA -->
+    <div class="page" id="page-usuarios-permissoes">
+      <div class="card mb-4" style="max-width:600px;">
+        <div class="card-title">Adicionar/Selecionar Usuário</div>
+        <p style="color:var(--text-muted);font-size:13px;margin-bottom:16px;">O login em si é criado direto no painel do Supabase (Authentication → Add User). Aqui você só configura o que cada e-mail pode ver e editar no sistema.</p>
+        <div class="form-group">
+          <label class="form-label">E-mail do usuário</label>
+          <input class="form-input" id="up-email" placeholder="usuario@exemplo.com" onchange="carregarPermissoesParaEdicao()">
+        </div>
+      </div>
+      <div class="card" id="up-tabela-wrap" style="display:none;max-width:700px;">
+        <div class="card-title">Permissões por página</div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Página</th><th style="text-align:center;">Pode ver</th><th style="text-align:center;">Pode editar</th></tr></thead>
+          <tbody id="up-tabela-corpo"></tbody>
+        </table></div>
+        <button class="btn btn-primary mt-4" onclick="salvarPermissoesForm()">Salvar Permissões</button>
+      </div>
+    </div>
+
     <div class="page" id="page-seguranca">
       <div class="card" style="max-width:500px;">
         <div class="card-title">Autenticação em Dois Fatores (2FA)</div>
@@ -1281,7 +1301,7 @@ setInterval(()=>{ if(AUTH.session) sbRefreshToken(); }, 45*60*1000);
 
 // ── Permissões de usuário ─────────────────────────────
 async function carregarPermissoes(email) {
-  if(email === MASTER_EMAIL) {
+  if((email||'').trim().toLowerCase() === MASTER_EMAIL) {
     // Master tem acesso total a tudo, sempre
     const tudo = {};
     PAGINAS_PERMISSAO.forEach(p=>{ tudo[p.key] = {ver:true, editar:true}; });
@@ -1335,7 +1355,7 @@ function renderUsuariosPermissoesPage() {
 async function carregarPermissoesParaEdicao() {
   const email = document.getElementById('up-email').value.trim().toLowerCase();
   if(!email || !email.includes('@')) { toast('Digite um e-mail válido.','warning'); return; }
-  if(email === MASTER_EMAIL) { toast('Este e-mail é o administrador master e já tem acesso total.','info'); return; }
+  if(email === MASTER_EMAIL.toLowerCase()) { toast('Este e-mail é o administrador master e já tem acesso total.','info'); return; }
 
   _permissoesEmEdicao = await carregarPermissoes(email);
 
@@ -1813,7 +1833,9 @@ async function finalizarLogin(token, email) {
   aplicarPermissoesNaSidebar();
   // Mostra o item "Usuários e Permissões" só para o master
   const navUsuarios = document.getElementById('nav-usuarios-permissoes');
-  if(navUsuarios) navUsuarios.style.display = (email === MASTER_EMAIL) ? '' : 'none';
+  const ehMaster = (email||'').trim().toLowerCase() === MASTER_EMAIL;
+  console.log('[permissoes] email logado:', JSON.stringify(email), '| é master?', ehMaster);
+  if(navUsuarios) navUsuarios.style.display = ehMaster ? '' : 'none';
   // Restrict colaborador: hide some nav items
   if(AUTH.perfil === 'colaborador') {
     document.getElementById('nav-config-section').style.display='none';
