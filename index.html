@@ -153,12 +153,21 @@
   .drop-zone small{color:var(--text-dim);font-size:11px;}
 
   /* Source tabs inside import modal */
-  .page.no-edit-permission .btn-primary,
-  .page.no-edit-permission .btn-danger,
-  .page.no-edit-permission .btn-warning,
+  .page.no-edit-permission button[onclick*="abrirModal"],
+  .page.no-edit-permission button[onclick*="editar"],
+  .page.no-edit-permission button[onclick*="Editar"],
+  .page.no-edit-permission button[onclick*="excluir"],
+  .page.no-edit-permission button[onclick*="Excluir"],
+  .page.no-edit-permission button[onclick*="clonar"],
+  .page.no-edit-permission button[onclick*="limpar"],
+  .page.no-edit-permission button[onclick*="Limpar"],
+  .page.no-edit-permission button[onclick*="confirmar"],
+  .page.no-edit-permission button[onclick*="reabrir"],
+  .page.no-edit-permission button[onclick*="aplicarEmTodos"],
+  .page.no-edit-permission button[onclick*="reclassificar"],
   .page.no-edit-permission input[type="checkbox"].sel-pagar,
   .page.no-edit-permission input[type="checkbox"].sel-receber,
-  .page.no-edit-permission .realizado-row button.btn-danger { pointer-events:none !important; opacity:.35 !important; }
+  .page.no-edit-permission .realizado-row { pointer-events:none !important; opacity:.4 !important; }
   .cat-dropdown-wrap { position:relative; }
   .cat-dropdown-trigger { display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none; }
   .cat-dropdown-trigger .cat-dropdown-label { overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text); }
@@ -369,7 +378,7 @@
     </div>
     <div class="topbar-right">
       <span id="autosave-badge">✓ Salvo</span>
-      <span style="font-size:9px;color:var(--text-dim);" title="Versão do código carregado">v20260917-2010</span>
+      <span style="font-size:9px;color:var(--text-dim);" title="Versão do código carregado">v20260917-2044</span>
       <span id="sb-status" title="Status Supabase" style="font-size:11px;padding:3px 8px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);">⬤ —</span>
       <button class="btn btn-ghost btn-sm" onclick="abrirSearch()" title="Busca rápida (Ctrl+K)">
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -1839,17 +1848,10 @@ async function finalizarLogin(token, email) {
   const ehMaster = (email||'').trim().toLowerCase() === MASTER_EMAIL;
   console.log('[permissoes] email logado:', JSON.stringify(email), '| é master?', ehMaster);
   if(navUsuarios) navUsuarios.style.display = ehMaster ? '' : 'none';
-  // Restrict colaborador: hide some nav items
-  if(AUTH.perfil === 'colaborador') {
-    document.getElementById('nav-config-section').style.display='none';
-    document.getElementById('nav-configuracoes').style.display='none';
-    document.getElementById('nav-analises-section').style.display='none';
-    document.getElementById('nav-analises').style.display='none';
-    document.getElementById('nav-realizados').style.display='none';
-    document.getElementById('nav-seguranca') && (document.getElementById('nav-seguranca').style.display='none');
-    document.getElementById('sidebar-footer-admin').style.display='none';
-    document.querySelector('[data-page="historico"]') && (document.querySelector('[data-page="historico"]').style.display='none');
-  }
+  // O sistema de permissões (PERMS) agora controla granularmente cada página.
+  // O botão "Fechar Mês" na barra lateral fica visível só se o usuário puder editar Fechamentos Mensais.
+  const podeGerenciarFechamento = PERMS['historico']?.editar !== false;
+  document.getElementById('sidebar-footer-admin').style.display = podeGerenciarFechamento ? '' : 'none';
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app').style.display='flex';
   // Load localStorage immediately for instant render
